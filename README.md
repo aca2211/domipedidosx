@@ -19,8 +19,8 @@ Sistema Web de Gestión de Pedidos y Domicilios para Restaurantes. Proyecto acad
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone https://github.com/tu-usuario/domipedidosx-backend.git
-   cd domipedidosx-backend
+   git clone https://github.com/tu-usuario/domipedidosx.git
+   cd domipedidosx
    ```
 
 2. **Crear y activar el entorno virtual:**
