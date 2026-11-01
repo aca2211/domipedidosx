@@ -1,6 +1,6 @@
 Proyecto final DS1
  # DomiPedidosX 🍔🛵 Sistema Web de Gestión de Pedidos y Domicilios para 
-Restaurantes. Proyecto académico para la asignatura de Desarrollo de Software I 
+# Restaurantes. Proyecto académico para la asignatura de Desarrollo de Software I 
 (2026-II) - Universidad del Valle. ## Integrantes del Equipo * Integrante 1: 
 Product Owner & UX/UI * Integrante 2: Scrum Master & DevOps * Integrante 3: Backend 
 & DB Engineer * Integrante 4: Backend Feature Developer ## Stack Tecnológico * 
