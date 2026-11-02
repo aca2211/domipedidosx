@@ -1,6 +1,8 @@
+import re
+
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from .models import CustomUser
+from .models import CustomUser, phone_validator
 
 
 def _estilizar(form, placeholders=None):
@@ -29,10 +31,11 @@ class RegistroForm(UserCreationForm):
     email = forms.EmailField(required=True, label='Correo electrónico')
     first_name = forms.CharField(max_length=150, required=True, label='Nombre')
     last_name = forms.CharField(max_length=150, required=True, label='Apellido')
+    phone = forms.CharField(max_length=20, required=True, label='Teléfono de contacto')
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2')
+        fields = ('username', 'first_name', 'last_name', 'email', 'phone', 'password1', 'password2')
         labels = {'username': 'Usuario'}
 
     def __init__(self, *args, **kwargs):
@@ -42,6 +45,7 @@ class RegistroForm(UserCreationForm):
         _estilizar(self, {
             'username': 'Ej: andrea123',
             'email': 'tucorreo@ejemplo.com',
+            'phone': 'Ej: 3001234567',
         })
 
     def clean_email(self):
@@ -49,6 +53,11 @@ class RegistroForm(UserCreationForm):
         if CustomUser.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError('Ya existe una cuenta con este correo.')
         return email
+
+    def clean_phone(self):
+        phone = re.sub(r'[\s\-().]', '', self.cleaned_data['phone'])
+        phone_validator(phone)
+        return phone
 
     def save(self, commit=True):
         user = super().save(commit=False)

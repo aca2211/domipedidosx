@@ -1,25 +1,44 @@
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
-from .models import CustomUser
+from .models import CustomUser, Direccion
+
+
+def datos_registro(**extra):
+    data = {
+        'username': 'ana', 'first_name': 'Ana', 'last_name': 'Pérez',
+        'email': 'ana@test.com', 'phone': '3001234567',
+        'password1': 'ClaveSegura#2026', 'password2': 'ClaveSegura#2026',
+    }
+    data.update(extra)
+    return data
+
 
 class AuthTests(TestCase):
     def test_registro_crea_cliente(self):
-        data = {
-            'username': 'ana', 'first_name': 'Ana', 'last_name': 'Pérez',
-            'email': 'ana@test.com', 'password1': 'ClaveSegura#2026', 'password2': 'ClaveSegura#2026',
-        }
-        resp = self.client.post(reverse('register'), data)
+        resp = self.client.post(reverse('register'), datos_registro())
         self.assertRedirects(resp, reverse('home'))
-        self.assertEqual(CustomUser.objects.get(username='ana').role, 'cliente')
+        user = CustomUser.objects.get(username='ana')
+        self.assertEqual(user.role, 'cliente')
+        self.assertEqual(user.phone, '3001234567')
 
     def test_registro_no_permite_elegir_rol(self):
-        data = {
-            'username': 'hacker', 'first_name': 'H', 'last_name': 'X',
-            'email': 'h@test.com', 'password1': 'ClaveSegura#2026', 'password2': 'ClaveSegura#2026',
-            'role': 'admin',
-        }
-        self.client.post(reverse('register'), data)
+        self.client.post(reverse('register'), datos_registro(username='hacker', email='h@test.com', role='admin'))
         self.assertEqual(CustomUser.objects.get(username='hacker').role, 'cliente')
+
+    def test_registro_exige_telefono(self):
+        resp = self.client.post(reverse('register'), datos_registro(phone=''))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(CustomUser.objects.filter(username='ana').exists())
+
+    def test_registro_rechaza_telefono_invalido(self):
+        resp = self.client.post(reverse('register'), datos_registro(phone='abc123'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(CustomUser.objects.filter(username='ana').exists())
+
+    def test_registro_normaliza_telefono(self):
+        self.client.post(reverse('register'), datos_registro(phone='300 123-4567'))
+        self.assertEqual(CustomUser.objects.get(username='ana').phone, '3001234567')
 
     def test_login_y_logout(self):
         CustomUser.objects.create_user('luis', 'l@test.com', 'ClaveSegura#2026')
@@ -30,3 +49,39 @@ class AuthTests(TestCase):
 
     def test_home_requiere_login(self):
         self.assertEqual(self.client.get(reverse('home')).status_code, 302)
+
+
+class DireccionTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user('ana', 'ana@test.com', 'ClaveSegura#2026')
+        self.otro = CustomUser.objects.create_user('luis', 'l@test.com', 'ClaveSegura#2026')
+
+    def test_usuario_puede_tener_varias_direcciones(self):
+        Direccion.objects.create(user=self.user, label='Casa', address='Calle 5 # 38-10')
+        Direccion.objects.create(user=self.user, label='Trabajo', address='Av. 6N # 25-30')
+        self.assertEqual(self.user.direcciones.count(), 2)
+
+    def test_nueva_principal_desmarca_la_anterior(self):
+        casa = Direccion.objects.create(user=self.user, label='Casa', address='Calle 5 # 38-10', is_default=True)
+        trabajo = Direccion.objects.create(user=self.user, label='Trabajo', address='Av. 6N # 25-30', is_default=True)
+        casa.refresh_from_db()
+        trabajo.refresh_from_db()
+        self.assertFalse(casa.is_default)
+        self.assertTrue(trabajo.is_default)
+
+    def test_principal_de_un_usuario_no_afecta_a_otro(self):
+        Direccion.objects.create(user=self.user, label='Casa', address='Calle 5 # 38-10', is_default=True)
+        Direccion.objects.create(user=self.otro, label='Casa', address='Cra 1 # 2-3', is_default=True)
+        self.assertEqual(Direccion.objects.filter(is_default=True).count(), 2)
+
+    def test_restriccion_en_bd_impide_dos_principales(self):
+        Direccion.objects.create(user=self.user, label='Casa', address='Calle 5 # 38-10', is_default=True)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Direccion.objects.bulk_create([
+                Direccion(user=self.user, label='Otra', address='Cra 9 # 9-9', is_default=True)
+            ])
+
+    def test_direcciones_se_borran_con_el_usuario(self):
+        Direccion.objects.create(user=self.user, label='Casa', address='Calle 5 # 38-10')
+        self.user.delete()
+        self.assertEqual(Direccion.objects.count(), 0)
