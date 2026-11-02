@@ -150,3 +150,7 @@ if not DEBUG:
 LANGUAGE_CODE = 'es-co'
 TIME_ZONE = 'America/Bogota'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Archivos subidos por los usuarios (imágenes de productos)
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'

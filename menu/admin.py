@@ -3,7 +3,7 @@ from .models import Sede, Category, Product
 
 @admin.register(Sede)
 class SedeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'address', 'is_active')
+    list_display = ('name', 'address', 'opening_time', 'closing_time', 'is_active')
     list_filter = ('is_active',)
 
 @admin.register(Category)
@@ -12,7 +12,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price', 'is_available')
+    list_display = ('name', 'category', 'price', 'prep_time_minutes', 'is_available')
     list_filter = ('category', 'sede', 'is_available')
     search_fields = ('name',)
 

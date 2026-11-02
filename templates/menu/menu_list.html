@@ -33,6 +33,7 @@
     {% for p in products %}
       <div class="col-md-6 col-lg-4" data-product data-name="{{ p.name|lower }}" data-cat="{{ p.category.name|lower }}">
         <div class="card card-domi hover h-100">
+          {% if p.image %}<img src="{{ p.image.url }}" class="card-img-top" alt="{{ p.name }}" style="height: 180px; object-fit: cover;">{% endif %}
           <div class="card-body">
             <span class="badge badge-domi mb-2">{{ p.category.name }}</span>
             <h5 class="card-title fw-bold">{{ p.name }}</h5>
@@ -40,6 +41,7 @@
           </div>
           <div class="card-footer bg-white border-0 pb-3 d-flex justify-content-between align-items-center">
             <span class="price">${{ p.price|floatformat:0 }}</span>
+            <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ p.prep_time_minutes }} min</small>
             <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{% for s in p.sede.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
           </div>
         </div>
