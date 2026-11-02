@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Panel · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <h2 class="fw-bold">Hola, {{ user.first_name|default:user.username }} 👋</h2>
+  <p class="text-muted">Tu rol: <span class="badge badge-domi">{{ user.get_role_display }}</span></p>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-6 col-lg-4">
+      <a class="card card-domi hover role-tile" href="{% url 'menu_list' %}">
+        <i class="bi bi-journal-richtext"></i>
+        <div><div class="fw-bold">Ver menú</div><small class="text-muted">Productos disponibles por sede</small></div>
+      </a>
+    </div>
+    {% if user.role == 'admin' or user.role == 'operador' %}
+    <div class="col-md-6 col-lg-4">
+      <a class="card card-domi hover role-tile" href="/admin/menu/">
+        <i class="bi bi-shop"></i>
+        <div><div class="fw-bold">Sedes, categorías y productos</div><small class="text-muted">Gestionar el menú</small></div>
+      </a>
+    </div>
+    {% endif %}
+    {% if user.role == 'admin' %}
+    <div class="col-md-6 col-lg-4">
+      <a class="card card-domi hover role-tile" href="/admin/users/customuser/">
+        <i class="bi bi-people"></i>
+        <div><div class="fw-bold">Usuarios y roles</div><small class="text-muted">Crear y administrar cuentas</small></div>
+      </a>
+    </div>
+    {% endif %}
+    {% if user.role == 'cocina' %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card card-domi role-tile disabled">
+        <i class="bi bi-fire"></i>
+        <div><div class="fw-bold">Tablero de cocina</div><small class="text-muted">Próximo sprint</small></div>
+      </div>
+    </div>
+    {% endif %}
+    {% if user.role == 'repartidor' %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card card-domi role-tile disabled">
+        <i class="bi bi-bicycle"></i>
+        <div><div class="fw-bold">Mis entregas</div><small class="text-muted">Próximo sprint</small></div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

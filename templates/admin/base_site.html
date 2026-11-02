@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  html[data-theme="light"], :root {
+    --primary: #b30000;
+    --secondary: #8b0000;
+    --accent: #ffd54f;
+    --link-fg: #b30000;
+    --link-hover-color: #8b0000;
+    --link-selected-fg: #8b0000;
+    --button-bg: #b30000;
+    --button-hover-bg: #8b0000;
+    --default-button-bg: #8b0000;
+    --default-button-hover-bg: #5c0000;
+    --object-tools-bg: #8b0000;
+    --object-tools-hover-bg: #5c0000;
+    --breadcrumbs-bg: #b30000;
+    --breadcrumbs-fg: #ffd9d9;
+    --header-bg: #8b0000;
+    --selected-row: #fdecec;
+  }
+</style>
+{% endblock %}

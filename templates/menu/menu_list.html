@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Menú · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <div>
+      <h2 class="fw-bold mb-0">Nuestro menú</h2>
+      <small class="text-muted" id="menu-count"></small>
+    </div>
+    <form method="get">
+      <select name="sede" class="form-select" onchange="this.form.submit()" aria-label="Filtrar por sede">
+        <option value="">Todas las sedes</option>
+        {% for s in sedes %}
+          <option value="{{ s.id }}" {% if sede_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <div class="input-group mb-3">
+    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+    <input id="menu-search" type="search" class="form-control" placeholder="Buscar producto...">
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <button type="button" class="btn btn-sm btn-outline-domi active" data-cat-chip="">Todas</button>
+    {% for c in categories %}
+      <button type="button" class="btn btn-sm btn-outline-domi" data-cat-chip="{{ c.name|lower }}">{{ c.name }}</button>
+    {% endfor %}
+  </div>
+
+  <div class="row g-3">
+    {% for p in products %}
+      <div class="col-md-6 col-lg-4" data-product data-name="{{ p.name|lower }}" data-cat="{{ p.category.name|lower }}">
+        <div class="card card-domi hover h-100">
+          <div class="card-body">
+            <span class="badge badge-domi mb-2">{{ p.category.name }}</span>
+            <h5 class="card-title fw-bold">{{ p.name }}</h5>
+            <p class="card-text text-muted">{{ p.description }}</p>
+          </div>
+          <div class="card-footer bg-white border-0 pb-3 d-flex justify-content-between align-items-center">
+            <span class="price">${{ p.price|floatformat:0 }}</span>
+            <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{% for s in p.sede.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div id="menu-empty" class="text-center text-muted py-5 {% if products %}d-none{% endif %}">
+    <i class="bi bi-emoji-frown fs-1"></i>
+    <p class="mt-2">No encontramos productos con ese filtro.</p>
+  </div>
+</div>
+{% endblock %}
