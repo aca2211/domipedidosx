@@ -42,7 +42,7 @@
           <div class="card-footer bg-white border-0 pb-3 d-flex justify-content-between align-items-center">
             <span class="price">${{ p.price|floatformat:0 }}</span>
             <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ p.prep_time_minutes }} min</small>
-            <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{% for s in p.sede.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
+            <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{% for sp in p.sedes_disponibles %}{{ sp.sede.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
           </div>
         </div>
       </div>

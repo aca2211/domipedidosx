@@ -5,11 +5,12 @@ from io import BytesIO
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from PIL import Image
 
-from .models import Category, Product, Sede
+from .models import Category, Product, Sede, SedeProduct
 
 
 def imagen_de_prueba():
@@ -47,7 +48,7 @@ class ProductoTests(TestCase):
         datos = dict(category=self.cat, name='Doble carne', description='Con queso', price='18000')
         datos.update(extra)
         p = Product.objects.create(**datos)
-        p.sede.add(self.sede)
+        SedeProduct.objects.create(sede=self.sede, product=p)
         return p
 
     def test_tiempo_de_preparacion_por_defecto(self):
@@ -66,13 +67,15 @@ class MenuPublicoTests(TestCase):
         self.cat = Category.objects.create(name='Bebidas')
         self.centro = Sede.objects.create(name='Centro', address='Cra 1')
         self.norte = Sede.objects.create(name='Norte', address='Av 3')
-        self.jugo = Product.objects.create(category=self.cat, name='Jugo', description='Natural', price='6000')
-        self.jugo.sede.add(self.centro)
-        self.cola = Product.objects.create(category=self.cat, name='Gaseosa', description='Fría', price='4000')
-        self.cola.sede.add(self.norte)
-        self.agotado = Product.objects.create(
-            category=self.cat, name='Limonada', description='Agotada', price='5000', is_available=False)
-        self.agotado.sede.add(self.centro)
+        self.jugo = self.producto('Jugo', 'Natural', '6000')
+        self.cola = self.producto('Gaseosa', 'Fría', '4000')
+        self.limonada = self.producto('Limonada', 'Agotada', '5000')
+        SedeProduct.objects.create(sede=self.centro, product=self.jugo)
+        SedeProduct.objects.create(sede=self.norte, product=self.cola)
+        SedeProduct.objects.create(sede=self.centro, product=self.limonada, is_available=False)
+
+    def producto(self, name, description, price):
+        return Product.objects.create(category=self.cat, name=name, description=description, price=price)
 
     def test_menu_es_publico_y_oculta_no_disponibles(self):
         resp = self.client.get(reverse('menu_list'))
@@ -85,6 +88,33 @@ class MenuPublicoTests(TestCase):
         resp = self.client.get(reverse('menu_list'), {'sede': self.centro.id})
         self.assertContains(resp, 'Jugo')
         self.assertNotContains(resp, 'Gaseosa')
+
+    def test_disponibilidad_es_por_sede(self):
+        # El jugo se agota en Centro pero sigue disponible en Norte.
+        SedeProduct.objects.filter(sede=self.centro, product=self.jugo).update(is_available=False)
+        SedeProduct.objects.create(sede=self.norte, product=self.jugo)
+        en_centro = self.client.get(reverse('menu_list'), {'sede': self.centro.id})
+        en_norte = self.client.get(reverse('menu_list'), {'sede': self.norte.id})
+        self.assertNotContains(en_centro, 'Jugo')
+        self.assertContains(en_norte, 'Jugo')
+
+    def test_producto_sin_sedes_no_aparece(self):
+        self.producto('Fantasma', 'Sin sede', '1000')
+        self.assertNotContains(self.client.get(reverse('menu_list')), 'Fantasma')
+
+    def test_sede_inactiva_no_muestra_sus_productos(self):
+        self.norte.is_active = False
+        self.norte.save()
+        self.assertNotContains(self.client.get(reverse('menu_list')), 'Gaseosa')
+
+    def test_sede_invalida_en_filtro_no_rompe(self):
+        resp = self.client.get(reverse('menu_list'), {'sede': 'abc'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Jugo')
+
+    def test_pareja_sede_producto_es_unica(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            SedeProduct.objects.create(sede=self.centro, product=self.jugo)
 
     def test_menu_muestra_tiempo_de_preparacion(self):
         self.assertContains(self.client.get(reverse('menu_list')), '15 min')
