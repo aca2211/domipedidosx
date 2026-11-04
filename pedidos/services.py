@@ -52,3 +52,34 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
         ])
     carrito.vaciar()
     return pedido
+
+
+
+
+class CancelacionError(Exception):
+    """El pedido no se puede cancelar; el mensaje es apto para el usuario (HU16)."""
+
+
+MENSAJES_NO_CANCELABLE = {
+    'en_preparacion': 'Tu pedido ya está en preparación y no se puede cancelar.',
+    'listo': 'Tu pedido ya está listo y no se puede cancelar.',
+    'entregado': 'Tu pedido ya fue entregado y no se puede cancelar.',
+    'cancelado': 'Este pedido ya estaba cancelado.',
+}
+
+
+def cancelar_pedido(pedido_id, cliente):
+    """El cliente cancela su propio pedido, solo mientras esté en «recibido» (HU16).
+
+    Lanza Pedido.DoesNotExist si el pedido no existe o es de otro cliente, y
+    CancelacionError si ya no está en «recibido». El pedido no se borra: pasa a «cancelado».
+    """
+    with transaction.atomic():
+        pedido = Pedido.objects.select_for_update().get(pk=pedido_id, cliente=cliente)
+        if pedido.estado != 'recibido':
+            raise CancelacionError(
+                MENSAJES_NO_CANCELABLE.get(pedido.estado, 'Este pedido ya no se puede cancelar.')
+            )
+        pedido.estado = 'cancelado'
+        pedido.save(update_fields=['estado', 'updated_at'])
+    return pedido

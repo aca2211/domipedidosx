@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import NoReverseMatch, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -8,9 +9,9 @@ from .cart import Carrito, CarritoError
 from .forms import ConfirmarPedidoForm
 from .models import Pedido
 from .permissions import rol_requerido
-from .services import crear_pedido
+from .services import CancelacionError, cancelar_pedido, crear_pedido
 
-# Nombre de la URL donde el cliente crea direcciones (HU05, la entrega el backend).
+
 URL_CREAR_DIRECCION = 'direccion_crear'
 
 
@@ -32,10 +33,9 @@ def _url_crear_direccion():
     try:
         return reverse(URL_CREAR_DIRECCION)
     except NoReverseMatch:
-        return reverse('home')  # mientras el backend publica la pantalla de direcciones
+        return reverse('home')  
 
 
-# ---------- HU13 · Carrito ----------
 
 @rol_requerido('cliente')
 def ver_carrito(request):
@@ -83,7 +83,7 @@ def quitar_del_carrito(request, producto_id):
     return redirect('carrito_ver')
 
 
-# ---------- HU14 · Confirmar pedido ----------
+
 
 @rol_requerido('cliente')
 def confirmar_pedido(request):
@@ -125,3 +125,17 @@ def pedido_creado(request, pk):
         pk=pk, cliente=request.user,
     )
     return render(request, 'pedidos/pedido_creado.html', {'pedido': pedido})
+
+
+@rol_requerido('cliente')
+@require_POST
+def cancelar_mi_pedido(request, pk):
+    try:
+        cancelar_pedido(pk, request.user)
+    except Pedido.DoesNotExist:
+        raise Http404  
+    except CancelacionError as e:
+        messages.error(request, str(e))
+    else:
+        messages.success(request, f'Tu pedido #{pk} fue cancelado.')
+    return redirect('pedido_creado', pk=pk)
