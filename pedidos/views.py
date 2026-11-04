@@ -5,10 +5,11 @@ from django.urls import NoReverseMatch, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from menu.models import Sede
 from .cart import Carrito, CarritoError
 from .forms import ConfirmarPedidoForm
 from .models import Pedido
-from .permissions import rol_requerido
+from .permissions import rol_requerido, obtener_sede
 from .services import crear_pedido
 
 # Nombre de la URL donde el cliente crea direcciones (HU05, la entrega el backend).
@@ -131,3 +132,110 @@ def pedido_creado(request, pk):
         pk=pk, cliente=request.user,
     )
     return render(request, 'pedidos/pedido_creado.html', {'pedido': pedido})
+
+
+
+
+# Columnas del tablero: (estado guardado, título, texto del botón)
+COLUMNAS = [
+    ('recibido', 'Recibido', 'Empezar a preparar'),
+    ('preparando', 'En preparación', 'Marcar listo'),
+    ('listo', 'Listo', 'Marcar entregado'),
+]
+
+# Pasos que ve el cliente en el indicador (HU20)
+PASOS = ['recibido', 'preparando', 'listo', 'entregado']
+ESTADOS_FINALES = ('entregado', 'cancelado')
+
+
+def _url_tablero(sede):
+    url = reverse('tablero_cocina')
+    return f'{url}?sede={sede.pk}' if sede else url
+
+
+@login_required
+def pedidos_list(request):
+    pedidos = Pedido.objects.filter(cliente=request.user).order_by("-id")
+    return render(request, 'pedidos/pedidos_list.html', {'pedidos': pedidos})
+
+
+# ---------- HU18: tablero kanban de cocina ----------
+@rol_requerido('cocina')
+def tablero_cocina(request):
+    sede = obtener_sede(request)
+    if sede is None:
+        # Sin sede: se muestra un selector (temporal, hasta que CustomUser tenga sede)
+        sedes = Sede.objects.filter(is_active=True)
+        return render(request, 'pedidos/tablero_cocina.html', {'sede': None, 'sedes': sedes})
+
+    pedidos = (
+        Pedido.objects
+        .filter(sede=sede, estado__in=[c[0] for c in COLUMNAS])
+        .select_related('cliente')
+        .prefetch_related('detalles__producto')   # evita una consulta por tarjeta
+        .order_by('created_at')                   # el más antiguo primero
+    )
+    columnas = [
+        {'estado': estado, 'titulo': titulo, 'accion': accion, 'pedidos': []}
+        for estado, titulo, accion in COLUMNAS
+    ]
+    por_estado = {c['estado']: c for c in columnas}
+    for pedido in pedidos:
+        por_estado[pedido.estado]['pedidos'].append(pedido)
+
+    return render(request, 'pedidos/tablero_cocina.html', {'sede': sede, 'columnas': columnas})
+
+
+# ---------- HU19: cambiar el estado desde el tablero ----------
+@rol_requerido('cocina')
+@require_POST
+def avanzar_estado(request, pk):
+    sede = obtener_sede(request)
+    if sede is None:
+        messages.error(request, 'Selecciona una sede para continuar.')
+        return redirect('tablero_cocina')
+
+    # Filtrar también por sede: un cocinero no puede tocar pedidos de otra sede.
+    pedido = get_object_or_404(Pedido, pk=pk, sede=sede)
+
+    if not pedido.puede_avanzar():
+        messages.error(
+            request,
+            f'El pedido #{pedido.pk} está {pedido.get_estado_display().lower()} y no se puede modificar.',
+        )
+    elif request.POST.get('estado_actual') != pedido.estado:
+        # El tablero estaba desactualizado (otro cocinero ya lo movió): no se salta ningún paso.
+        messages.warning(
+            request,
+            f'El pedido #{pedido.pk} ya cambió de estado. Revisa el tablero actualizado.',
+        )
+    else:
+        pedido.estado = pedido.siguiente_estado()
+        pedido.save(update_fields=['estado', 'updated_at'])
+        messages.success(
+            request,
+            f'Pedido #{pedido.pk} ahora está {pedido.get_estado_display().lower()}.',
+        )
+    return redirect(_url_tablero(sede))
+
+
+# ---------- HU20: el cliente ve el estado de su pedido ----------
+@login_required
+def pedido_detalle(request, pk):
+    # Filtrar por cliente: si el pedido es de otro, responde 404 (ni siquiera confirma que existe).
+    pedido = get_object_or_404(
+        Pedido.objects.select_related('sede').prefetch_related('detalles__producto'),
+        pk=pk, cliente=request.user,
+    )
+    nombres = dict(Pedido.ESTADOS)
+    indice = PASOS.index(pedido.estado) if pedido.estado in PASOS else -1
+    pasos = [
+        {'nombre': nombres[clave], 'hecho': i < indice, 'actual': i == indice}
+        for i, clave in enumerate(PASOS)
+    ]
+    return render(request, 'pedidos/pedido_detalle.html', {
+        'pedido': pedido,
+        'pasos': pasos,
+        'cancelado': pedido.estado == 'cancelado',
+        'refrescar': pedido.estado not in ESTADOS_FINALES,
+    })

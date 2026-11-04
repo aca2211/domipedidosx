@@ -47,10 +47,10 @@
     {% endif %}
     {% if user.role == 'cocina' %}
     <div class="col-md-6 col-lg-4">
-      <div class="card card-domi role-tile disabled">
+      <a class="card card-domi hover role-tile" href="{% url 'tablero_cocina' %}">
         <i class="bi bi-fire"></i>
-        <div><div class="fw-bold">Tablero de cocina</div><small class="text-muted">Próximo sprint</small></div>
-      </div>
+      <div><div class="fw-bold">Tablero de cocina</div><small class="text-muted">Pedidos por preparar</small></div>
+      </a>
     </div>
     {% endif %}
     {% if user.role == 'repartidor' %}

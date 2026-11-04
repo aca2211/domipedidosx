@@ -32,8 +32,9 @@
                     <tbody>
                         {% for pedido in pedidos %}
                             <tr>
-                                <!-- Número de pedido con el formato de tu __str__ -->
-                                <td class="fw-medium text-primary">#{{ pedido.id }}</td>
+                                <!-- 🚀 TU NUEVA LÍNEA INYECTADA AQUÍ MANO: -->
+                                <td class="fw-medium"><a href="{% url 'pedido_detalle' pedido.id %}" class="text-decoration-none">#{{ pedido.id }}</a></td>
+                                
                                 <td>{{ pedido.sede }}</td>
                                 <td>{{ pedido.metodo_pago }}</td>
                                 <td>{{ pedido.tipo_entrega }}</td>
