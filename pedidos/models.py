@@ -25,3 +25,8 @@ class DetallePedido(models.Model):
     cantidad= models.PositiveIntegerField()
     precio_unitario= models.DecimalField(max_digits=10, decimal_places=2)
     subtotal= models.DecimalField(max_digits=12, decimal_places=2)
+
+
+def __str__(self):
+    return f"Pedido #{self.id} - {self.cliente.username}"
+    
