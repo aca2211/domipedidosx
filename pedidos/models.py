@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 
 class Pedido(models.Model):
-    ESTADOS =[('recibido', 'Recibido'), ('preparando', 'Preparando'), ('listo', 'Listo'), ('entregado', 'Entregado'), ('cancelado', 'Cancelado')]
+    ESTADOS =[('recibido', 'Recibido'), ('en_preparacion', 'En preparacion'), ('listo', 'Listo'), ('entregado', 'Entregado'), ('cancelado', 'Cancelado')]
     METODOS_PAGO =[('efectivo', 'Efectivo'), ('tarjeta', 'Tarjeta'), ('transferencia', 'Transferencia')]
     TIPOS_ENTREGA =[('domicilio', 'Domicilio'), ('mostrador', 'Mostrador')]
 
@@ -19,6 +19,11 @@ class Pedido(models.Model):
     created_at = models.DateTimeField(auto_now_add=True) 
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f"Pedido #{self.id} - {self.cliente.username}"
+
+
+
 class DetallePedido(models.Model):
     pedido= models.ForeignKey(Pedido, related_name='detalles', on_delete=models.CASCADE)
     producto= models.ForeignKey('menu.Product', on_delete=models.PROTECT)
@@ -27,6 +32,4 @@ class DetallePedido(models.Model):
     subtotal= models.DecimalField(max_digits=12, decimal_places=2)
 
 
-def __str__(self):
-    return f"Pedido #{self.id} - {self.cliente.username}"
     
