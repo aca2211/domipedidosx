@@ -1,11 +1,18 @@
 from django.contrib import messages
-from django.shortcuts import redirect, render
-from django.urls import reverse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import NoReverseMatch, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .cart import Carrito, CarritoError
+from .forms import ConfirmarPedidoForm
+from .models import Pedido
 from .permissions import rol_requerido
+from .services import crear_pedido
+
+# Nombre de la URL donde el cliente crea direcciones (HU05, la entrega el backend).
+URL_CREAR_DIRECCION = 'direccion_crear'
+
 
 def _entero(valor):
     try:
@@ -19,6 +26,13 @@ def _destino_seguro(request, defecto):
     if destino and url_has_allowed_host_and_scheme(destino, allowed_hosts={request.get_host()}):
         return destino
     return defecto
+
+
+def _url_crear_direccion():
+    try:
+        return reverse(URL_CREAR_DIRECCION)
+    except NoReverseMatch:
+        return reverse('home')  # mientras el backend publica la pantalla de direcciones
 
 
 # ---------- HU13 · Carrito ----------
@@ -68,4 +82,46 @@ def quitar_del_carrito(request, producto_id):
     messages.success(request, 'Producto quitado del carrito.')
     return redirect('carrito_ver')
 
-# Create your views here.
+
+# ---------- HU14 · Confirmar pedido ----------
+
+@rol_requerido('cliente')
+def confirmar_pedido(request):
+    carrito = Carrito(request)
+    if carrito.vacio:
+        messages.warning(request, 'Tu carrito está vacío. Agrega productos para hacer un pedido.')
+        return redirect('menu_list')
+    if not request.user.direcciones.exists():
+        messages.warning(request, 'Primero guarda una dirección de entrega para poder confirmar tu pedido.')
+        return redirect(_url_crear_direccion())
+
+    if request.method == 'POST':
+        form = ConfirmarPedidoForm(request.POST, user=request.user)
+        if form.is_valid():
+            try:
+                pedido = crear_pedido(
+                    carrito, cliente=request.user,
+                    metodo_pago=form.cleaned_data['metodo_pago'],
+                    direccion=form.cleaned_data['direccion'],
+                    observaciones=form.cleaned_data['observaciones'],
+                )
+            except CarritoError as e:
+                messages.error(request, str(e))
+                return redirect('carrito_ver')
+            messages.success(request, f'¡Pedido #{pedido.pk} recibido!')
+            return redirect('pedido_creado', pk=pedido.pk)
+    else:
+        form = ConfirmarPedidoForm(user=request.user)
+
+    contexto = {'form': form, 'carrito': carrito, 'sede': carrito.sede}
+    contexto.update(carrito.resumen())
+    return render(request, 'pedidos/confirmar.html', contexto)
+
+
+@rol_requerido('cliente')
+def pedido_creado(request, pk):
+    pedido = get_object_or_404(
+        Pedido.objects.select_related('sede', 'direccion').prefetch_related('detalles__producto'),
+        pk=pk, cliente=request.user,
+    )
+    return render(request, 'pedidos/pedido_creado.html', {'pedido': pedido})

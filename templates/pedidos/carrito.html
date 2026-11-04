@@ -54,7 +54,7 @@
             {% if hay_agotados %}
               <button class="btn btn-domi w-100 mt-3" disabled>Confirmar pedido</button>
             {% else %}
-              <button class="btn btn-domi w-100 mt-3" disabled>Confirmar pedido</button>
+              <a href="{% url 'pedido_confirmar' %}" class="btn btn-domi w-100 mt-3">Confirmar pedido</a>
             {% endif %}
             <a href="{% url 'menu_list' %}?sede={{ sede.id }}" class="btn btn-link w-100 mt-1">Seguir agregando</a>
           </div>

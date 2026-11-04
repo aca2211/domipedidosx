@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Confirmar pedido · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <h2 class="fw-bold mb-3"><i class="bi bi-bag-check me-2"></i>Confirmar pedido</h2>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <form method="post" class="card card-domi">
+        <div class="card-body">
+          {% csrf_token %}
+          {% include 'includes/field.html' with field=form.direccion %}
+          {% include 'includes/field.html' with field=form.metodo_pago %}
+          {% include 'includes/field.html' with field=form.observaciones %}
+          <div class="alert alert-light small mb-3"><i class="bi bi-info-circle me-1"></i>El pago es simulado: pagas al recibir tu pedido.</div>
+          <button class="btn btn-domi w-100" type="submit">Hacer pedido · ${{ total|floatformat:0 }}</button>
+          <a href="{% url 'carrito_ver' %}" class="btn btn-link w-100 mt-1">Volver al carrito</a>
+        </div>
+      </form>
+    </div>
+    <div class="col-lg-5">
+      <div class="card card-domi">
+        <div class="card-body">
+          <h5 class="fw-bold">Tu pedido · {{ sede.name }}</h5>
+          {% for l in lineas %}
+            <div class="d-flex justify-content-between small py-1"><span>{{ l.cantidad }} × {{ l.producto.name }}</span><span>${{ l.subtotal|floatformat:0 }}</span></div>
+          {% endfor %}
+          <hr>
+          <div class="d-flex justify-content-between"><span>Subtotal</span><span>${{ subtotal|floatformat:0 }}</span></div>
+          <div class="d-flex justify-content-between"><span>Domicilio</span><span>${{ costo_domicilio|floatformat:0 }}</span></div>
+          <div class="d-flex justify-content-between fw-bold mt-1"><span>Total</span><span class="price">${{ total|floatformat:0 }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
