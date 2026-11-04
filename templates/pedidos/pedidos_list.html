@@ -40,12 +40,18 @@
                                 <td class="text-muted small">{{ pedido.created_at|date:"d M Y, g:i a" }}</td>
                                 <td class="text-center">
                                     <!-- Badges inteligentes según el estado del pedido -->
-                                    {% if pedido.estado == 'Pendiente' %}
-                                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Pendiente</span>
-                                    {% elif pedido.estado == 'Entregado' %}
+                                    {% if pedido.estado == 'recibido' %}
+                                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Recibido</span>
+                                    {% elif pedido.estado == 'preparando' %}
+                                        <span class="badge bg-secondary px-3 py-2 rounded-pill">Preparando</span>
+                                    {% elif pedido.estado == 'listo' %}
+                                        <span class="badge bg-dark px-3 py-2 rounded-pill">Listo</span>
+                                    {% elif pedido.estado == 'entregado' %}
                                         <span class="badge bg-success px-3 py-2 rounded-pill">Entregado</span>
+                                    {% elif pedido.estado == 'cancelado' %}
+                                        <span class="badge bg-danger px-3 py-2 rounded-pill">Cancelado</span>
                                     {% else %}
-                                        <span class="badge bg-secondary px-3 py-2 rounded-pill">{{ pedido.estado }}</span>
+                                        <span class="badge bg-secondary px-3 py-2 rounded-pill">{{ pedido.get_estado_display }}</span>
                                     {% endif %}
                                 </td>
                             </tr>

@@ -9,6 +9,7 @@ class Pedido(models.Model):
     cliente = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pedidos', on_delete=models.CASCADE) 
     creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pedidos_creados', on_delete=models.CASCADE)
     sede = models.ForeignKey('menu.Sede', related_name='pedidos', on_delete=models.CASCADE)
+    direccion = models.ForeignKey('users.Direccion', null=True, blank=True, on_delete=models.SET_NULL) 
     tipo_entrega = models.CharField(choices=TIPOS_ENTREGA, default='domicilio', max_length=20)
     metodo_pago = models.CharField(choices=METODOS_PAGO, max_length=20)
     observaciones = models.TextField(blank=True)
@@ -21,6 +22,20 @@ class Pedido(models.Model):
 
     def __str__(self):
         return f"Pedido #{self.id} - {self.cliente.username}"
+
+    TRANSICIONES = {
+        'recibido': 'preparando',
+        'preparando': 'listo',
+        'listo': 'entregado',
+        'entregado': None,
+        'cancelado': None,
+    }   
+
+    def siguiente_estado(self):
+        return self.TRANSICIONES.get(self.estado, None)
+
+    def puede_avanzar(self):
+        return self.siguiente_estado() is not None
 
 
 
