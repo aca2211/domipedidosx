@@ -12,6 +12,14 @@
         <div><div class="fw-bold">Ver menú</div><small class="text-muted">Productos disponibles por sede</small></div>
       </a>
     </div>
+    {% if user.role == 'cliente' %}
+    <div class="col-md-6 col-lg-4">
+      <a class="card card-domi hover role-tile" href="{% url 'carrito_ver' %}">
+        <i class="bi bi-cart3"></i>
+        <div><div class="fw-bold">Mi carrito</div><small class="text-muted">Revisa y confirma tu pedido</small></div>
+      </a>
+    </div>
+    {% endif %}
     {% if user.role == 'admin' or user.role == 'operador' %}
     <div class="col-md-6 col-lg-4">
       <a class="card card-domi hover role-tile" href="/admin/menu/">
