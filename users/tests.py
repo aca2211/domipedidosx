@@ -123,3 +123,90 @@ class RolYSedeTests(TestCase):
         u = CustomUser.objects.create_user('oscar', 'o@test.com', 'ClaveSegura#2026', role='operador', sede=sede)
         u.clean()
         self.assertEqual(list(sede.personal.all()), [u])
+
+
+# ---------- Operador en el admin del menú (HU04, HU11) ----------
+from menu.models import Category, Product, Sede, SedeProduct
+
+
+class AccesoOperadorTests(TestCase):
+    def setUp(self):
+        self.centro = Sede.objects.create(name='Centro', address='Cra 1')
+        self.norte = Sede.objects.create(name='Norte', address='Cra 2')
+        cat = Category.objects.create(name='Platos')
+        self.burger = Product.objects.create(category=cat, name='Hamburguesa', description='x', price=10000)
+        self.pizza = Product.objects.create(category=cat, name='Pizza', description='x', price=20000)
+        self.sp_centro = SedeProduct.objects.create(sede=self.centro, product=self.burger)
+        self.sp_norte = SedeProduct.objects.create(sede=self.norte, product=self.pizza)
+        self.op = CustomUser.objects.create_user(
+            'oscar', 'o@test.com', 'ClaveSegura#2026', role='operador', sede=self.centro)
+        self.client.force_login(self.op)
+
+    def test_ve_solo_los_productos_de_su_sede_en_sedeproduct(self):
+        r = self.client.get(reverse('admin:menu_sedeproduct_changelist'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Hamburguesa')
+        self.assertNotContains(r, 'Pizza')
+
+    def test_ve_solo_los_productos_de_su_sede_en_productos(self):
+        r = self.client.get(reverse('admin:menu_product_changelist'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Hamburguesa')
+        self.assertNotContains(r, 'Pizza')
+
+    def test_no_abre_registros_de_otra_sede(self):
+        r = self.client.get(reverse('admin:menu_sedeproduct_change', args=[self.sp_norte.pk]))
+        self.assertEqual(r.status_code, 302)
+
+    def test_cambia_la_disponibilidad_de_su_sede(self):
+        r = self.client.post(reverse('admin:menu_sedeproduct_change', args=[self.sp_centro.pk]), {})
+        self.assertEqual(r.status_code, 302)
+        self.sp_centro.refresh_from_db()
+        self.assertFalse(self.sp_centro.is_available)
+
+    def test_no_modifica_la_disponibilidad_de_otra_sede(self):
+        self.client.post(reverse('admin:menu_sedeproduct_change', args=[self.sp_norte.pk]), {})
+        self.sp_norte.refresh_from_db()
+        self.assertTrue(self.sp_norte.is_available)
+
+    def test_no_puede_borrar(self):
+        r = self.client.get(reverse('admin:menu_sedeproduct_delete', args=[self.sp_centro.pk]))
+        self.assertEqual(r.status_code, 403)
+
+    def test_no_edita_productos(self):
+        self.client.post(reverse('admin:menu_product_change', args=[self.burger.pk]), {
+            'category': self.burger.category_id, 'name': 'Cambiado',
+            'description': 'x', 'price': '1', 'prep_time_minutes': 15,
+        })
+        self.burger.refresh_from_db()
+        self.assertEqual(self.burger.name, 'Hamburguesa')
+
+    def test_no_entra_a_usuarios(self):
+        r = self.client.get(reverse('admin:users_customuser_changelist'))
+        self.assertEqual(r.status_code, 403)
+
+    def test_agrega_productos_solo_a_su_sede(self):
+        url = reverse('admin:menu_sedeproduct_add')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Norte')
+        # intentar otra sede no es válido
+        self.client.post(url, {'sede': self.norte.pk, 'product': self.burger.pk, 'is_available': 'on'})
+        self.assertEqual(SedeProduct.objects.count(), 2)
+        # su sede sí
+        r = self.client.post(url, {'sede': self.centro.pk, 'product': self.pizza.pk, 'is_available': 'on'})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(SedeProduct.objects.filter(sede=self.centro, product=self.pizza).exists())
+
+    def test_operador_sin_sede_no_ve_registros(self):
+        sin = CustomUser.objects.create_user('sinsede', 's@test.com', 'ClaveSegura#2026', role='operador')
+        self.client.force_login(sin)
+        r = self.client.get(reverse('admin:menu_sedeproduct_changelist'))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, 'Hamburguesa')
+
+    def test_cliente_no_entra_al_admin(self):
+        cli = CustomUser.objects.create_user('cli', 'c@test.com', 'ClaveSegura#2026')
+        self.client.force_login(cli)
+        r = self.client.get(reverse('admin:menu_sedeproduct_changelist'))
+        self.assertEqual(r.status_code, 302)
