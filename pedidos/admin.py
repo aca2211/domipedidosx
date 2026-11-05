@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.contrib import admin
+
 from .models import DetallePedido, Pedido
 
 
@@ -14,4 +14,4 @@ class PedidoAdmin(admin.ModelAdmin):
     list_filter = ('estado', 'sede')
     inlines = [DetallePedidoInline]
 
-
+# Register your models here.
