@@ -19,6 +19,7 @@
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="{% url 'menu_list' %}"><i class="bi bi-journal-richtext me-1"></i>Menú</a></li>
         {% if user.is_authenticated and user.role == 'cliente' %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'mis_pedidos' %}"><i class="bi bi-receipt me-1"></i>Mis pedidos</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'carrito_ver' %}"><i class="bi bi-cart3 me-1"></i>Carrito{% if carrito_cantidad %} <span class="badge bg-light text-dark">{{ carrito_cantidad }}</span>{% endif %}</a></li>
         {% endif %}
       </ul>

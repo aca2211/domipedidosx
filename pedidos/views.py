@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import NoReverseMatch, reverse
@@ -139,3 +140,14 @@ def cancelar_mi_pedido(request, pk):
     else:
         messages.success(request, f'Tu pedido #{pk} fue cancelado.')
     return redirect('pedido_creado', pk=pk)
+
+
+@rol_requerido('cliente')
+def mis_pedidos(request):
+    pedidos = (
+        Pedido.objects.filter(cliente=request.user)
+        .select_related('sede')
+        .annotate(num_productos=Count('detalles'))
+        .order_by('-created_at', '-id')
+    )
+    return render(request, 'pedidos/mis_pedidos.html', {'pedidos': pedidos})
