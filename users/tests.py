@@ -374,3 +374,100 @@ class PerfilYDireccionesTests(TestCase):
     def test_next_externo_se_ignora(self):
         r = self.client.post(reverse('direccion_crear'), self.datos_direccion(next='https://evil.example.com/'))
         self.assertRedirects(r, reverse('direccion_lista'))
+
+
+# ---------- Recuperar contraseña (HU03) ----------
+import re
+from urllib.parse import urlparse
+
+from django.core import mail
+
+
+class RecuperarContrasenaTests(TestCase):
+    CLAVE_VIEJA = 'ClaveVieja#2026'
+    CLAVE_NUEVA = 'ClaveNueva#2026'
+
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            'ana', email='ana@test.com', password=self.CLAVE_VIEJA, role='cliente', phone='3001234567')
+
+    def _pedir(self, email='ana@test.com'):
+        return self.client.post(reverse('password_reset'), {'email': email})
+
+    def _ruta_del_enlace(self):
+        cuerpo = mail.outbox[0].body
+        url = re.search(r'https?://\S+/recuperar/\S+/', cuerpo).group(0)
+        return urlparse(url).path
+
+    def test_login_tiene_enlace_de_recuperacion(self):
+        resp = self.client.get(reverse('login'))
+        self.assertContains(resp, reverse('password_reset'))
+        self.assertContains(resp, '¿Olvidaste tu contraseña?')
+
+    def test_formulario_carga(self):
+        self.assertEqual(self.client.get(reverse('password_reset')).status_code, 200)
+
+    def test_envia_correo_a_cuenta_activa(self):
+        resp = self._pedir()
+        self.assertRedirects(resp, reverse('password_reset_done'))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['ana@test.com'])
+        self.assertIn('Recuperación', mail.outbox[0].subject)
+        self.assertIn('ana', mail.outbox[0].body)
+
+    def test_correo_no_distingue_mayusculas(self):
+        self._pedir('ANA@Test.com')
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_correo_inexistente_no_revela_nada(self):
+        resp = self._pedir('nadie@test.com')
+        self.assertRedirects(resp, reverse('password_reset_done'))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_usuario_inactivo_no_recibe_correo(self):
+        self.user.is_active = False
+        self.user.save()
+        self._pedir()
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_correo_vacio_es_invalido(self):
+        resp = self._pedir('')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_flujo_completo_cambia_la_contrasena(self):
+        self._pedir()
+        ruta = self._ruta_del_enlace()
+        paso = self.client.get(ruta)
+        self.assertEqual(paso.status_code, 302)   # Django guarda el token en sesión y redirige
+        resp = self.client.post(paso.url, {
+            'new_password1': self.CLAVE_NUEVA, 'new_password2': self.CLAVE_NUEVA})
+        self.assertRedirects(resp, reverse('password_reset_complete'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(self.CLAVE_NUEVA))
+        self.assertFalse(self.user.check_password(self.CLAVE_VIEJA))
+        self.client.logout()
+        self.assertTrue(self.client.login(username='ana', password=self.CLAVE_NUEVA))
+
+    def test_enlace_es_de_un_solo_uso(self):
+        self._pedir()
+        ruta = self._ruta_del_enlace()
+        paso = self.client.get(ruta)
+        self.client.post(paso.url, {
+            'new_password1': self.CLAVE_NUEVA, 'new_password2': self.CLAVE_NUEVA})
+        resp = self.client.get(ruta)
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.context['validlink'])
+
+    def test_enlace_alterado_no_es_valido(self):
+        resp = self.client.get(reverse('password_reset_confirm', args=['abc', 'token-falso']))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.context['validlink'])
+
+    def test_contrasena_debil_se_rechaza(self):
+        self._pedir()
+        paso = self.client.get(self._ruta_del_enlace())
+        resp = self.client.post(paso.url, {'new_password1': '123', 'new_password2': '123'})
+        self.assertEqual(resp.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(self.CLAVE_VIEJA))

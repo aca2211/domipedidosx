@@ -1,7 +1,9 @@
 import re
 
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import (
+    AuthenticationForm, PasswordResetForm, SetPasswordForm, UserCreationForm,
+)
 from .models import CustomUser, Direccion, phone_validator
 
 
@@ -117,3 +119,22 @@ class DireccionForm(forms.ModelForm):
             'details': 'Ej: Apto 301, portería azul',
         })
         self.fields['is_default'].widget.attrs['class'] = 'form-check-input'
+
+
+class RecuperarContrasenaForm(PasswordResetForm):
+    """Paso 1 de HU03: pide el correo. Solo reciben el mensaje las cuentas activas."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].label = 'Correo electrónico'
+        _estilizar(self, {'email': 'tucorreo@ejemplo.com'})
+
+
+class NuevaContrasenaForm(SetPasswordForm):
+    """Paso 2 de HU03: elegir la nueva contraseña (valida con AUTH_PASSWORD_VALIDATORS)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['new_password1'].label = 'Nueva contraseña'
+        self.fields['new_password2'].label = 'Confirmar nueva contraseña'
+        _estilizar(self)
