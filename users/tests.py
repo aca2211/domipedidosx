@@ -210,3 +210,167 @@ class AccesoOperadorTests(TestCase):
         self.client.force_login(cli)
         r = self.client.get(reverse('admin:menu_sedeproduct_changelist'))
         self.assertEqual(r.status_code, 302)
+
+
+# ---------- Perfil y direcciones del cliente (HU05) ----------
+class PerfilYDireccionesTests(TestCase):
+    def setUp(self):
+        self.cliente = CustomUser.objects.create_user(
+            'andrea', 'andrea@test.com', 'ClaveSegura#2026',
+            first_name='Andrea', last_name='Pérez', phone='3001234567')
+        self.otro = CustomUser.objects.create_user(
+            'beto', 'beto@test.com', 'ClaveSegura#2026', phone='3009998888')
+        self.client.force_login(self.cliente)
+
+    def datos_perfil(self, **extra):
+        datos = {'first_name': 'Andrea', 'last_name': 'Pérez',
+                 'email': 'andrea@test.com', 'phone': '3001234567'}
+        datos.update(extra)
+        return datos
+
+    def datos_direccion(self, **extra):
+        datos = {'label': 'Casa', 'address': 'Calle 5 # 38-10', 'details': ''}
+        datos.update(extra)
+        return datos
+
+    # --- perfil ---
+    def test_perfil_muestra_los_datos(self):
+        r = self.client.get(reverse('perfil'))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'andrea@test.com')
+
+    def test_perfil_actualiza_los_datos(self):
+        r = self.client.post(reverse('perfil'), self.datos_perfil(
+            first_name='Ana', email='NUEVO@Test.com', phone='300 111 2222'))
+        self.assertRedirects(r, reverse('perfil'))
+        self.cliente.refresh_from_db()
+        self.assertEqual(self.cliente.first_name, 'Ana')
+        self.assertEqual(self.cliente.email, 'nuevo@test.com')
+        self.assertEqual(self.cliente.phone, '3001112222')
+
+    def test_perfil_rechaza_correo_de_otro_usuario(self):
+        r = self.client.post(reverse('perfil'), self.datos_perfil(email='BETO@test.com'))
+        self.assertEqual(r.status_code, 200)
+        self.cliente.refresh_from_db()
+        self.assertEqual(self.cliente.email, 'andrea@test.com')
+
+    def test_perfil_permite_conservar_el_propio_correo(self):
+        r = self.client.post(reverse('perfil'), self.datos_perfil(first_name='Andrea María'))
+        self.assertRedirects(r, reverse('perfil'))
+
+    def test_perfil_rechaza_telefono_invalido(self):
+        r = self.client.post(reverse('perfil'), self.datos_perfil(phone='abc'))
+        self.assertEqual(r.status_code, 200)
+        self.cliente.refresh_from_db()
+        self.assertEqual(self.cliente.phone, '3001234567')
+
+    def test_perfil_no_permite_cambiar_el_rol(self):
+        self.client.post(reverse('perfil'), self.datos_perfil(role='admin'))
+        self.cliente.refresh_from_db()
+        self.assertEqual(self.cliente.role, 'cliente')
+        self.assertFalse(self.cliente.is_staff)
+
+    def test_anonimo_va_al_login(self):
+        self.client.logout()
+        for nombre in ('perfil', 'direccion_lista', 'direccion_crear'):
+            r = self.client.get(reverse(nombre))
+            self.assertEqual(r.status_code, 302, nombre)
+            self.assertIn('/login/', r.url)
+
+    def test_otros_roles_no_entran_al_perfil_ni_a_direcciones(self):
+        cocina = CustomUser.objects.create_user('chef', 'chef@test.com', 'ClaveSegura#2026', role='repartidor')
+        self.client.force_login(cocina)
+        for nombre in ('perfil', 'direccion_lista', 'direccion_crear'):
+            r = self.client.get(reverse(nombre))
+            self.assertRedirects(r, reverse('home'), fetch_redirect_response=False)
+
+    # --- direcciones ---
+    def test_la_url_que_espera_pedidos_existe(self):
+        self.assertEqual(reverse('direccion_crear'), '/direcciones/nueva/')
+
+    def test_la_primera_direccion_queda_como_principal(self):
+        r = self.client.post(reverse('direccion_crear'), self.datos_direccion())
+        self.assertRedirects(r, reverse('direccion_lista'))
+        d = self.cliente.direcciones.get()
+        self.assertTrue(d.is_default)
+        self.assertEqual(d.user, self.cliente)
+
+    def test_la_segunda_no_quita_la_principal(self):
+        self.client.post(reverse('direccion_crear'), self.datos_direccion())
+        self.client.post(reverse('direccion_crear'), self.datos_direccion(label='Trabajo', address='Av. 6N # 25-30'))
+        self.assertEqual(self.cliente.direcciones.count(), 2)
+        self.assertEqual(self.cliente.direcciones.get(is_default=True).label, 'Casa')
+
+    def test_marcar_como_principal_al_crear(self):
+        self.client.post(reverse('direccion_crear'), self.datos_direccion())
+        self.client.post(reverse('direccion_crear'), self.datos_direccion(
+            label='Trabajo', address='Av. 6N # 25-30', is_default='on'))
+        self.assertEqual(self.cliente.direcciones.get(is_default=True).label, 'Trabajo')
+
+    def test_hacer_principal(self):
+        Direccion.objects.create(user=self.cliente, label='Casa', address='Calle 1', is_default=True)
+        otra = Direccion.objects.create(user=self.cliente, label='Trabajo', address='Calle 2')
+        r = self.client.post(reverse('direccion_principal', args=[otra.pk]))
+        self.assertRedirects(r, reverse('direccion_lista'))
+        self.assertEqual(self.cliente.direcciones.get(is_default=True), otra)
+
+    def test_editar_direccion_propia(self):
+        d = Direccion.objects.create(user=self.cliente, label='Casa', address='Calle 1', is_default=True)
+        r = self.client.post(reverse('direccion_editar', args=[d.pk]), self.datos_direccion(
+            label='Casa nueva', address='Calle 9 # 9-9', is_default='on'))
+        self.assertRedirects(r, reverse('direccion_lista'))
+        d.refresh_from_db()
+        self.assertEqual((d.label, d.address), ('Casa nueva', 'Calle 9 # 9-9'))
+
+    def test_editar_no_deja_al_cliente_sin_principal(self):
+        d = Direccion.objects.create(user=self.cliente, label='Casa', address='Calle 1', is_default=True)
+        self.client.post(reverse('direccion_editar', args=[d.pk]), self.datos_direccion(label='Casa'))
+        d.refresh_from_db()
+        self.assertTrue(d.is_default)
+
+    def test_no_edita_direccion_ajena(self):
+        ajena = Direccion.objects.create(user=self.otro, label='Casa', address='Otra calle 1')
+        r = self.client.post(reverse('direccion_editar', args=[ajena.pk]), self.datos_direccion(label='Hack'))
+        self.assertEqual(r.status_code, 404)
+        ajena.refresh_from_db()
+        self.assertEqual(ajena.label, 'Casa')
+
+    def test_eliminar_direccion_propia(self):
+        d = Direccion.objects.create(user=self.cliente, label='Casa', address='Calle 1', is_default=True)
+        r = self.client.post(reverse('direccion_eliminar', args=[d.pk]))
+        self.assertRedirects(r, reverse('direccion_lista'))
+        self.assertFalse(self.cliente.direcciones.exists())
+
+    def test_eliminar_exige_post(self):
+        d = Direccion.objects.create(user=self.cliente, label='Casa', address='Calle 1')
+        r = self.client.get(reverse('direccion_eliminar', args=[d.pk]))
+        self.assertEqual(r.status_code, 405)
+        self.assertTrue(self.cliente.direcciones.exists())
+
+    def test_eliminar_la_principal_promueve_otra(self):
+        principal = Direccion.objects.create(user=self.cliente, label='Casa', address='Calle 1', is_default=True)
+        otra = Direccion.objects.create(user=self.cliente, label='Trabajo', address='Calle 2')
+        self.client.post(reverse('direccion_eliminar', args=[principal.pk]))
+        otra.refresh_from_db()
+        self.assertTrue(otra.is_default)
+
+    def test_no_elimina_ni_cambia_direccion_ajena(self):
+        ajena = Direccion.objects.create(user=self.otro, label='Casa', address='Otra calle 1')
+        self.assertEqual(self.client.post(reverse('direccion_eliminar', args=[ajena.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse('direccion_principal', args=[ajena.pk])).status_code, 404)
+        self.assertTrue(Direccion.objects.filter(pk=ajena.pk).exists())
+
+    def test_la_lista_solo_muestra_las_propias(self):
+        Direccion.objects.create(user=self.cliente, label='Mi casa', address='Calle 1')
+        Direccion.objects.create(user=self.otro, label='Casa de Beto', address='Calle 2')
+        r = self.client.get(reverse('direccion_lista'))
+        self.assertContains(r, 'Mi casa')
+        self.assertNotContains(r, 'Casa de Beto')
+
+    def test_next_interno_se_respeta(self):
+        r = self.client.post(reverse('direccion_crear'), self.datos_direccion(next=reverse('perfil')))
+        self.assertRedirects(r, reverse('perfil'))
+
+    def test_next_externo_se_ignora(self):
+        r = self.client.post(reverse('direccion_crear'), self.datos_direccion(next='https://evil.example.com/'))
+        self.assertRedirects(r, reverse('direccion_lista'))
