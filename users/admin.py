@@ -10,11 +10,11 @@ class DireccionInline(admin.TabularInline):
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'phone', 'role', 'is_active', 'is_staff')
-    list_filter = ('role', 'is_active', 'is_staff')
+    list_display = ('username', 'email', 'phone', 'role', 'sede', 'is_active', 'is_staff')
+    list_filter = ('role', 'sede', 'is_active', 'is_staff')
     search_fields = UserAdmin.search_fields + ('phone',)
-    fieldsets = UserAdmin.fieldsets + (('Rol en DomiPedidosX', {'fields': ('role', 'phone')}),)
+    fieldsets = UserAdmin.fieldsets + (('Rol en DomiPedidosX', {'fields': ('role', 'phone', 'sede')}),)
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ('Rol en DomiPedidosX', {'fields': ('email', 'phone', 'role')}),
+        ('Rol en DomiPedidosX', {'fields': ('email', 'phone', 'role', 'sede')}),
     )
     inlines = [DireccionInline]

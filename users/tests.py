@@ -85,3 +85,41 @@ class DireccionTests(TestCase):
         Direccion.objects.create(user=self.user, label='Casa', address='Calle 5 # 38-10')
         self.user.delete()
         self.assertEqual(Direccion.objects.count(), 0)
+
+
+# ---------- Sede del personal y acceso por rol (HU04) ----------
+from django.core.exceptions import ValidationError
+
+
+class RolYSedeTests(TestCase):
+    def test_operador_queda_como_staff(self):
+        u = CustomUser.objects.create_user('oscar', 'o@test.com', 'ClaveSegura#2026', role='operador')
+        self.assertTrue(u.is_staff)
+        self.assertFalse(u.is_superuser)
+
+    def test_admin_queda_como_superusuario(self):
+        u = CustomUser.objects.create_user('adm', 'a@test.com', 'ClaveSegura#2026', role='admin')
+        self.assertTrue(u.is_staff)
+        self.assertTrue(u.is_superuser)
+
+    def test_cliente_cocina_y_repartidor_no_son_staff(self):
+        for rol in ('cliente', 'cocina', 'repartidor'):
+            u = CustomUser.objects.create_user(f'u_{rol}', f'{rol}@test.com', 'ClaveSegura#2026', role=rol)
+            self.assertFalse(u.is_staff, rol)
+
+    def test_operador_y_cocina_exigen_sede(self):
+        for rol in ('operador', 'cocina'):
+            with self.assertRaises(ValidationError) as cm:
+                CustomUser(username='x', role=rol).clean()
+            self.assertIn('sede', cm.exception.message_dict)
+
+    def test_cliente_y_repartidor_no_exigen_sede(self):
+        for rol in ('cliente', 'repartidor'):
+            CustomUser(username='x', role=rol).clean()
+
+    def test_usuario_con_sede(self):
+        from menu.models import Sede
+        sede = Sede.objects.create(name='Centro', address='Cra 1')
+        u = CustomUser.objects.create_user('oscar', 'o@test.com', 'ClaveSegura#2026', role='operador', sede=sede)
+        u.clean()
+        self.assertEqual(list(sede.personal.all()), [u])
