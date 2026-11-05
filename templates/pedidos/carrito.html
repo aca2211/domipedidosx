@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Mi carrito · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <h2 class="fw-bold mb-1"><i class="bi bi-cart3 me-2"></i>Mi carrito</h2>
+  {% if sede %}<p class="text-muted"><i class="bi bi-geo-alt me-1"></i>Pedido para la sede <strong>{{ sede.name }}</strong></p>{% endif %}
+
+  {% if not lineas %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-cart-x fs-1"></i>
+      <p class="mt-2">Tu carrito está vacío.</p>
+      <a href="{% url 'menu_list' %}" class="btn btn-domi">Ver el menú</a>
+    </div>
+  {% else %}
+    {% if hay_agotados %}
+      <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-1"></i>Algún producto ya no está disponible en esta sede. Quítalo para poder confirmar.</div>
+    {% endif %}
+    <div class="row g-4">
+      <div class="col-lg-8">
+        {% for l in lineas %}
+          <div class="card card-domi mb-3 {% if not l.disponible %}border border-warning{% endif %}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between gap-2">
+                <div>
+                  <h5 class="fw-bold mb-1">{{ l.producto.name }}</h5>
+                  <small class="text-muted">${{ l.precio|floatformat:0 }} c/u</small>
+                  {% if not l.disponible %}<div><span class="badge bg-warning text-dark">No disponible en esta sede</span></div>{% endif %}
+                </div>
+                <div class="price text-end">${{ l.subtotal|floatformat:0 }}</div>
+              </div>
+              <div class="d-flex flex-wrap gap-2 mt-3">
+                <form method="post" action="{% url 'carrito_actualizar' l.producto.id %}" class="d-flex gap-2">
+                  {% csrf_token %}
+                  <input type="number" name="cantidad" value="{{ l.cantidad }}" min="1" max="50" class="form-control form-control-sm" style="width: 80px;" aria-label="Cantidad de {{ l.producto.name }}">
+                  <button class="btn btn-sm btn-outline-domi" type="submit">Actualizar</button>
+                </form>
+                <form method="post" action="{% url 'carrito_quitar' l.producto.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-trash me-1"></i>Quitar</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="col-lg-4">
+        <div class="card card-domi">
+          <div class="card-body">
+            <h5 class="fw-bold">Resumen</h5>
+            <div class="d-flex justify-content-between"><span>Subtotal</span><span>${{ subtotal|floatformat:0 }}</span></div>
+            <div class="d-flex justify-content-between"><span>Domicilio</span><span>${{ costo_domicilio|floatformat:0 }}</span></div>
+            <hr>
+            <div class="d-flex justify-content-between fw-bold"><span>Total</span><span class="price">${{ total|floatformat:0 }}</span></div>
+            {% if hay_agotados %}
+              <button class="btn btn-domi w-100 mt-3" disabled>Confirmar pedido</button>
+            {% else %}
+              <a href="{% url 'pedido_confirmar' %}" class="btn btn-domi w-100 mt-3">Confirmar pedido</a>
+            {% endif %}
+            <a href="{% url 'menu_list' %}?sede={{ sede.id }}" class="btn btn-link w-100 mt-1">Seguir agregando</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
