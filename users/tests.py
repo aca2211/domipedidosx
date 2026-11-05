@@ -471,3 +471,91 @@ class RecuperarContrasenaTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(self.CLAVE_VIEJA))
+
+
+# ---------- Desactivar clientes (HU06) ----------
+from menu.models import Sede
+
+
+class DesactivarUsuariosTests(TestCase):
+    def setUp(self):
+        self.admin_user = CustomUser.objects.create_user(
+            'jefe', password='ClaveAdmin#2026', role='admin', email='jefe@test.com')
+        self.cliente = CustomUser.objects.create_user(
+            'ana', password='ClaveSegura#2026', role='cliente', phone='3001234567')
+        self.otro = CustomUser.objects.create_user(
+            'beto', password='ClaveSegura#2026', role='cliente', phone='3007654321')
+        self.url = reverse('admin:users_customuser_changelist')
+        self.client.force_login(self.admin_user)
+
+    def _accion(self, nombre, *usuarios):
+        return self.client.post(self.url, {
+            'action': nombre,
+            '_selected_action': [u.pk for u in usuarios],
+        }, follow=True)
+
+    def test_admin_desactiva_clientes_seleccionados(self):
+        resp = self._accion('desactivar_usuarios', self.cliente, self.otro)
+        self.assertContains(resp, 'Usuarios desactivados: 2.')
+        self.cliente.refresh_from_db()
+        self.otro.refresh_from_db()
+        self.assertFalse(self.cliente.is_active)
+        self.assertFalse(self.otro.is_active)
+
+    def test_admin_activa_clientes_desactivados(self):
+        CustomUser.objects.filter(pk=self.cliente.pk).update(is_active=False)
+        resp = self._accion('activar_usuarios', self.cliente)
+        self.assertContains(resp, 'Usuarios activados: 1.')
+        self.cliente.refresh_from_db()
+        self.assertTrue(self.cliente.is_active)
+
+    def test_no_puede_desactivarse_a_si_mismo(self):
+        resp = self._accion('desactivar_usuarios', self.admin_user, self.cliente)
+        self.assertContains(resp, 'No puedes desactivar tu propia cuenta.')
+        self.admin_user.refresh_from_db()
+        self.cliente.refresh_from_db()
+        self.assertTrue(self.admin_user.is_active)
+        self.assertFalse(self.cliente.is_active)
+
+    def test_las_acciones_aparecen_en_el_listado(self):
+        resp = self.client.get(self.url)
+        self.assertContains(resp, 'Desactivar usuarios seleccionados')
+        self.assertContains(resp, 'Activar usuarios seleccionados')
+
+    def test_usuario_inactivo_no_puede_iniciar_sesion(self):
+        self._accion('desactivar_usuarios', self.cliente)
+        self.client.logout()
+        resp = self.client.post(reverse('login'), {'username': 'ana', 'password': 'ClaveSegura#2026'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_usuario_inactivo_pierde_la_sesion_abierta(self):
+        otro_navegador = self.client_class()
+        self.assertTrue(otro_navegador.login(username='ana', password='ClaveSegura#2026'))
+        self.assertEqual(otro_navegador.get(reverse('home')).status_code, 200)
+        self._accion('desactivar_usuarios', self.cliente)
+        resp = otro_navegador.get(reverse('home'))
+        self.assertRedirects(resp, f"{reverse('login')}?next={reverse('home')}")
+
+    def test_usuario_desactivado_no_aparece_al_operador(self):
+        sede = Sede.objects.create(name='Centro', address='Cra 1')
+        operador = CustomUser.objects.create_user(
+            'oper', password='x', role='operador', sede=sede)
+        url = reverse('operador_elegir_cliente') + f'?sede={sede.id}&q=ana'
+        self.client.force_login(operador)
+        self.assertEqual(self.client.get(url).context['resultados'], [self.cliente])
+        self.client.force_login(self.admin_user)
+        self._accion('desactivar_usuarios', self.cliente)
+        self.client.force_login(operador)
+        self.assertEqual(self.client.get(url).context['resultados'], [])
+
+    def test_operador_no_puede_usar_el_admin_de_usuarios(self):
+        sede = Sede.objects.create(name='Centro', address='Cra 1')
+        operador = CustomUser.objects.create_user('oper', password='x', role='operador', sede=sede)
+        self.client.force_login(operador)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        resp = self.client.post(self.url, {
+            'action': 'desactivar_usuarios', '_selected_action': [self.cliente.pk]})
+        self.assertEqual(resp.status_code, 403)
+        self.cliente.refresh_from_db()
+        self.assertTrue(self.cliente.is_active)
