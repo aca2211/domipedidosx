@@ -471,3 +471,182 @@ class RecuperarContrasenaTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(self.CLAVE_VIEJA))
+
+
+# ---------- Desactivar clientes (HU06) ----------
+from menu.models import Sede
+
+
+class DesactivarUsuariosTests(TestCase):
+    def setUp(self):
+        self.admin_user = CustomUser.objects.create_user(
+            'jefe', password='ClaveAdmin#2026', role='admin', email='jefe@test.com')
+        self.cliente = CustomUser.objects.create_user(
+            'ana', password='ClaveSegura#2026', role='cliente', phone='3001234567')
+        self.otro = CustomUser.objects.create_user(
+            'beto', password='ClaveSegura#2026', role='cliente', phone='3007654321')
+        self.url = reverse('admin:users_customuser_changelist')
+        self.client.force_login(self.admin_user)
+
+    def _accion(self, nombre, *usuarios):
+        return self.client.post(self.url, {
+            'action': nombre,
+            '_selected_action': [u.pk for u in usuarios],
+        }, follow=True)
+
+    def test_admin_desactiva_clientes_seleccionados(self):
+        resp = self._accion('desactivar_usuarios', self.cliente, self.otro)
+        self.assertContains(resp, 'Usuarios desactivados: 2.')
+        self.cliente.refresh_from_db()
+        self.otro.refresh_from_db()
+        self.assertFalse(self.cliente.is_active)
+        self.assertFalse(self.otro.is_active)
+
+    def test_admin_activa_clientes_desactivados(self):
+        CustomUser.objects.filter(pk=self.cliente.pk).update(is_active=False)
+        resp = self._accion('activar_usuarios', self.cliente)
+        self.assertContains(resp, 'Usuarios activados: 1.')
+        self.cliente.refresh_from_db()
+        self.assertTrue(self.cliente.is_active)
+
+    def test_no_puede_desactivarse_a_si_mismo(self):
+        resp = self._accion('desactivar_usuarios', self.admin_user, self.cliente)
+        self.assertContains(resp, 'No puedes desactivar tu propia cuenta.')
+        self.admin_user.refresh_from_db()
+        self.cliente.refresh_from_db()
+        self.assertTrue(self.admin_user.is_active)
+        self.assertFalse(self.cliente.is_active)
+
+    def test_las_acciones_aparecen_en_el_listado(self):
+        resp = self.client.get(self.url)
+        self.assertContains(resp, 'Desactivar usuarios seleccionados')
+        self.assertContains(resp, 'Activar usuarios seleccionados')
+
+    def test_usuario_inactivo_no_puede_iniciar_sesion(self):
+        self._accion('desactivar_usuarios', self.cliente)
+        self.client.logout()
+        resp = self.client.post(reverse('login'), {'username': 'ana', 'password': 'ClaveSegura#2026'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_usuario_inactivo_pierde_la_sesion_abierta(self):
+        otro_navegador = self.client_class()
+        self.assertTrue(otro_navegador.login(username='ana', password='ClaveSegura#2026'))
+        self.assertEqual(otro_navegador.get(reverse('home')).status_code, 200)
+        self._accion('desactivar_usuarios', self.cliente)
+        resp = otro_navegador.get(reverse('home'))
+        self.assertRedirects(resp, f"{reverse('login')}?next={reverse('home')}")
+
+    def test_usuario_desactivado_no_aparece_al_operador(self):
+        sede = Sede.objects.create(name='Centro', address='Cra 1')
+        operador = CustomUser.objects.create_user(
+            'oper', password='x', role='operador', sede=sede)
+        url = reverse('operador_elegir_cliente') + f'?sede={sede.id}&q=ana'
+        self.client.force_login(operador)
+        self.assertEqual(self.client.get(url).context['resultados'], [self.cliente])
+        self.client.force_login(self.admin_user)
+        self._accion('desactivar_usuarios', self.cliente)
+        self.client.force_login(operador)
+        self.assertEqual(self.client.get(url).context['resultados'], [])
+
+    def test_operador_no_puede_usar_el_admin_de_usuarios(self):
+        sede = Sede.objects.create(name='Centro', address='Cra 1')
+        operador = CustomUser.objects.create_user('oper', password='x', role='operador', sede=sede)
+        self.client.force_login(operador)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        resp = self.client.post(self.url, {
+            'action': 'desactivar_usuarios', '_selected_action': [self.cliente.pk]})
+        self.assertEqual(resp.status_code, 403)
+        self.cliente.refresh_from_db()
+        self.assertTrue(self.cliente.is_active)
+
+
+# ---------- Roles desde el admin (HU04) ----------
+class RolesDesdeAdminTests(TestCase):
+    """Alta y cambio de roles desde el admin (HU04)."""
+
+    def setUp(self):
+        self.admin_user = CustomUser.objects.create_user(
+            'jefe', password='ClaveAdmin#2026', role='admin', email='jefe@test.com')
+        self.sede = Sede.objects.create(name='Centro', address='Cra 1')
+        self.client.force_login(self.admin_user)
+
+    def _alta(self, **extra):
+        data = {
+            'username': 'nuevo', 'usable_password': 'true',
+            'password1': 'ClaveNueva#2026', 'password2': 'ClaveNueva#2026',
+            'email': 'nuevo@test.com', 'phone': '3001112222', 'role': 'cliente', 'sede': '',
+            'direcciones-TOTAL_FORMS': '0', 'direcciones-INITIAL_FORMS': '0',
+            'direcciones-MIN_NUM_FORMS': '0', 'direcciones-MAX_NUM_FORMS': '1000',
+        }
+        data.update(extra)
+        return self.client.post(reverse('admin:users_customuser_add'), data)
+
+    def _datos_cambio(self, **extra):
+        data = {
+            'username': 'ana', 'first_name': '', 'last_name': '', 'email': 'ana@test.com',
+            'is_active': 'on', 'date_joined_0': '2026-01-01', 'date_joined_1': '00:00:00',
+            'role': 'cliente', 'phone': '3001234567', 'sede': '',
+            'direcciones-TOTAL_FORMS': '0', 'direcciones-INITIAL_FORMS': '0',
+            'direcciones-MIN_NUM_FORMS': '0', 'direcciones-MAX_NUM_FORMS': '1000',
+        }
+        data.update(extra)
+        return data
+
+    def test_alta_de_operador_con_sede(self):
+        resp = self._alta(role='operador', sede=self.sede.pk)
+        self.assertEqual(resp.status_code, 302)
+        u = CustomUser.objects.get(username='nuevo')
+        self.assertEqual((u.role, u.sede), ('operador', self.sede))
+        self.assertTrue(u.is_staff)
+        self.assertFalse(u.is_superuser)
+
+    def test_alta_de_operador_sin_sede_se_rechaza(self):
+        resp = self._alta(role='operador')
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(CustomUser.objects.filter(username='nuevo').exists())
+        self.assertContains(resp, 'deben tener una sede asignada')
+
+    def test_alta_de_cocina_sin_sede_se_rechaza(self):
+        resp = self._alta(role='cocina')
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(CustomUser.objects.filter(username='nuevo').exists())
+
+    def test_alta_de_cocina_con_sede_no_entra_al_admin(self):
+        self._alta(role='cocina', sede=self.sede.pk)
+        u = CustomUser.objects.get(username='nuevo')
+        self.assertEqual(u.role, 'cocina')
+        self.assertFalse(u.is_staff)
+
+    def test_alta_de_repartidor_y_cliente_sin_sede(self):
+        self._alta(username='repa', email='r@test.com', role='repartidor')
+        self._alta(username='clie', email='c@test.com', role='cliente')
+        self.assertFalse(CustomUser.objects.get(username='repa').is_staff)
+        self.assertFalse(CustomUser.objects.get(username='clie').is_staff)
+
+    def test_alta_de_administrador_es_superusuario(self):
+        self._alta(role='admin')
+        u = CustomUser.objects.get(username='nuevo')
+        self.assertTrue(u.is_staff)
+        self.assertTrue(u.is_superuser)
+
+    def test_cambiar_rol_de_cliente_a_operador(self):
+        cliente = CustomUser.objects.create_user(
+            'ana', password='x', role='cliente', phone='3001234567', email='ana@test.com')
+        resp = self.client.post(
+            reverse('admin:users_customuser_change', args=[cliente.pk]),
+            self._datos_cambio(role='operador', sede=self.sede.pk))
+        self.assertEqual(resp.status_code, 302)
+        cliente.refresh_from_db()
+        self.assertEqual((cliente.role, cliente.sede), ('operador', self.sede))
+        self.assertTrue(cliente.is_staff)
+
+    def test_cambiar_a_operador_sin_sede_se_rechaza(self):
+        cliente = CustomUser.objects.create_user(
+            'ana', password='x', role='cliente', phone='3001234567', email='ana@test.com')
+        resp = self.client.post(
+            reverse('admin:users_customuser_change', args=[cliente.pk]),
+            self._datos_cambio(role='operador'))
+        self.assertEqual(resp.status_code, 200)
+        cliente.refresh_from_db()
+        self.assertEqual(cliente.role, 'cliente')
