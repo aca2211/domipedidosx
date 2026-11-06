@@ -17,37 +17,64 @@ Sistema Web de Gestión de Pedidos y Domicilios para Restaurantes. Proyecto acad
 * **Base de Datos:** SQLite (Desarrollo) / PostgreSQL (Producción)
 * **Frontend:** HTML5, CSS3, JavaScript, Bootstrap
 
-## Instrucciones de Instalación Local
+# Manual de Instalación - DomiPedidosX
 
-1. **Clonar el repositorio:**
-   ```bash
-   git clone https://github.com/tu-usuario/domipedidosx.git
-   cd domipedidosx
-   ```
+Este manual describe los pasos necesarios para descargar, configurar y ejecutar el entorno de desarrollo local de DomiPedidosX.
 
-2. **Crear y activar el entorno virtual:**
-   ```bash
-   python -m venv venv
-   # En Windows:
-   venv\Scripts\activate
-   # En Mac/Linux:
-   source venv/bin/activate
-   ```
+## Pre-requisitos
+Asegúrese de tener instalado en su sistema operativo:
+* **Python 3.12.3**
+* **Git**
+* Entorno virtual de Python (`venv`)
 
-3. **Instalar dependencias:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Pasos de Instalación
 
-4. **Configurar variables de entorno:**
-   * Copia el archivo `.env.example` y renómbralo a `.env`.
-   * Llena los datos necesarios (ej. `SECRET_KEY`).
+**1. Clonar el repositorio y acceder a la rama de desarrollo**
+```bash
+git clone https://github.com/tu-usuario/domipedidosx.git
+cd domipedidosx
+git checkout develop
+```
 
-5. **Ejecutar migraciones y levantar el servidor:**
-   ```bash
-   python manage.py migrate
-   python manage.py runserver
-   ```
+**2. Crear y activar el entorno virtual**
+```bash
+python -m venv venv
+# En Windows:
+venv\Scripts\activate
+# En Mac/Linux:
+source venv/bin/activate
+```
+
+**3. Instalar dependencias**
+```bash
+pip install -r requirements.txt
+```
+
+**4. Configurar variables de entorno**
+El sistema buscará las configuraciones en el archivo `settings.py`. Para desarrollo local asegúrese de tener `DEBUG = True`. (Opcional: cree un archivo `.env` si abstrajeron las credenciales).
+
+**5. Preparar la Base de Datos (SQLite)**
+Ejecute las migraciones para generar las tablas `users`, `menu` y `pedidos`:
+```bash
+python manage.py migrate
+```
+
+**6. Cargar Datos de Demostración (Recomendado)**
+El equipo ha preparado un script que inyecta Sedes, Productos, Usuarios (por rol) y Pedidos de prueba. Ejecute:
+```bash
+python manage.py cargar_demo
+```
+*Esto generará automáticamente los siguientes usuarios (con la contraseña `demo1234`):*
+* `demo_cliente` (Rol Cliente)
+* `demo_operador` (Rol Operador)
+* `demo_cocina` (Rol Cocina)
+* `demo_admin` (Rol Admin)
+
+**7. Levantar el Servidor**
+```bash
+python manage.py runserver
+```
+Acceda a la aplicación abriendo un navegador web en `http://localhost:8000`.
 
 ## Flujo de Trabajo (Git Flow)
 
