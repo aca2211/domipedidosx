@@ -83,3 +83,30 @@ def cancelar_pedido(pedido_id, cliente):
         pedido.estado = 'cancelado'
         pedido.save(update_fields=['estado', 'updated_at'])
     return pedido
+
+
+class AvanceError(Exception):
+    """El pedido no se puede avanzar; el mensaje es apto para el usuario (HU19)."""
+
+
+def avanzar_pedido(pedido_id, sede, estado_esperado):
+    """La cocina avanza un pedido de su sede al siguiente estado (HU19).
+
+    - Lanza Pedido.DoesNotExist si el pedido no existe o es de otra sede.
+    - Lanza AvanceError si el pedido ya es final (entregado/cancelado) o si ya
+      cambió de estado desde que el tablero lo mostró (`estado_esperado`),
+      para no saltarse pasos.
+    """
+    with transaction.atomic():
+        pedido = Pedido.objects.select_for_update().get(pk=pedido_id, sede=sede)
+        if not pedido.puede_avanzar():
+            raise AvanceError(
+                f'El pedido #{pedido.pk} está {pedido.get_estado_display().lower()} y no se puede modificar.'
+            )
+        if pedido.estado != estado_esperado:
+            raise AvanceError(
+                f'El pedido #{pedido.pk} ya cambió de estado. Revisa el tablero actualizado.'
+            )
+        pedido.estado = pedido.siguiente_estado()
+        pedido.save(update_fields=['estado', 'updated_at'])
+    return pedido

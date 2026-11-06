@@ -3,11 +3,13 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from menu.models import Sede
 
 from .cart import Carrito
+from .models import Pedido
 from .permissions import rol_requerido
 
 User = get_user_model()
@@ -81,3 +83,27 @@ def seleccionar_cliente(request):
     request.session[CLIENTE_KEY] = cliente.id
     messages.success(request, f'Cliente seleccionado: {cliente.get_full_name() or cliente.username}.')
     return redirect('operador_elegir_cliente')
+
+
+@rol_requerido('operador')
+def panel_operador(request):
+    """Panel del operador (HU21): pedidos del día de su sede + enlaces a los módulos."""
+    sede = sede_del_operador(request)
+    if sede is None:
+        # Sin sede se muestra el selector (temporal, igual que en HU15)
+        return render(request, 'pedidos/operador/panel.html', {
+            'sede': None,
+            'sedes': Sede.objects.filter(is_active=True).order_by('name'),
+        })
+
+    pedidos = (
+        Pedido.objects
+        .filter(sede=sede, created_at__date=timezone.localdate())  # "hoy" en America/Bogota
+        .select_related('cliente')                                  # evita una consulta por fila
+        .order_by('-created_at', '-id')                             # el más reciente primero
+    )
+    return render(request, 'pedidos/operador/panel.html', {
+        'sede': sede,
+        'sedes': [],
+        'pedidos': pedidos,
+    })

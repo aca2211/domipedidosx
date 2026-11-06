@@ -12,6 +12,22 @@
     {% endif %}
     <p class="text-muted mb-0">Pedido #{{ pedido.pk }} · <span class="badge badge-domi">{{ pedido.get_estado_display }}</span></p>
   </div>
+  {% if pedido.estado != 'cancelado' %}
+  <div class="card card-domi mb-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between text-center">
+        {% for paso in pasos %}
+          <div class="flex-fill">
+            <div class="mx-auto mb-2 rounded-circle d-flex align-items-center justify-content-center fw-bold {% if paso.hecho %}bg-success text-white{% elif paso.actual %}bg-danger text-white{% else %}bg-light text-muted border{% endif %}" style="width:42px;height:42px;">
+              {% if paso.hecho %}<i class="bi bi-check-lg"></i>{% else %}{{ forloop.counter }}{% endif %}
+            </div>
+            <div class="small {% if paso.actual %}fw-bold{% elif not paso.hecho %}text-muted{% endif %}">{{ paso.nombre }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
   <div class="card card-domi">
     <div class="card-body">
       <p class="mb-1"><i class="bi bi-shop me-1"></i><strong>Sede:</strong> {{ pedido.sede.name }}</p>
@@ -37,4 +53,10 @@
   <a href="{% url 'mis_pedidos' %}" class="btn btn-outline-domi w-100 mt-3">Ver mis pedidos</a>
   <a href="{% url 'menu_list' %}" class="btn btn-domi w-100 mt-2">Volver al menú</a>
 </div>
+{% if refrescar %}
+<script>
+  // Refresco automático cada 10 s mientras el pedido siga en curso
+  setTimeout(function () { window.location.reload(); }, 10000);
+</script>
+{% endif %}
 {% endblock %}

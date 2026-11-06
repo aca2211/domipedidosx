@@ -15,6 +15,10 @@ from .services import CancelacionError, cancelar_pedido, crear_pedido
 
 URL_CREAR_DIRECCION = 'direccion_crear'
 
+# HU20: pasos que ve el cliente en el indicador de progreso
+PASOS = ['recibido', 'en_preparacion', 'listo', 'entregado']
+ESTADOS_FINALES = ('entregado', 'cancelado')
+
 
 def _entero(valor):
     try:
@@ -125,7 +129,17 @@ def pedido_creado(request, pk):
         Pedido.objects.select_related('sede', 'direccion').prefetch_related('detalles__producto'),
         pk=pk, cliente=request.user,
     )
-    return render(request, 'pedidos/pedido_creado.html', {'pedido': pedido})
+    nombres = dict(Pedido.ESTADOS)
+    indice = PASOS.index(pedido.estado) if pedido.estado in PASOS else -1
+    pasos = [
+        {'nombre': nombres[clave], 'hecho': i < indice, 'actual': i == indice}
+        for i, clave in enumerate(PASOS)
+    ]
+    return render(request, 'pedidos/pedido_creado.html', {
+        'pedido': pedido,
+        'pasos': pasos,
+        'refrescar': pedido.estado not in ESTADOS_FINALES,  # refresco automático mientras siga en curso
+    })
 
 
 @rol_requerido('cliente')

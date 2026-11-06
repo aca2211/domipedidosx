@@ -25,6 +25,20 @@
         <div><div class="fw-bold">Mis pedidos</div><small class="text-muted">Historial y estado de tus pedidos</small></div>
       </a>
     </div>
+    <div class="col-md-6 col-lg-4">
+      <a class="card card-domi hover role-tile" href="{% url 'perfil' %}">
+        <i class="bi bi-person-gear"></i>
+        <div><div class="fw-bold">Mi perfil</div><small class="text-muted">Datos de contacto y direcciones</small></div>
+      </a>
+    </div>
+    {% endif %}
+    {% if user.role == 'operador' %}
+    <div class="col-md-6 col-lg-4">
+      <a class="card card-domi hover role-tile" href="{% url 'operador_panel' %}">
+        <i class="bi bi-speedometer2"></i>
+        <div><div class="fw-bold">Panel del operador</div><small class="text-muted">Pedidos del día de tu sede</small></div>
+      </a>
+    </div>
     {% endif %}
     {% if user.role == 'admin' or user.role == 'operador' %}
     <div class="col-md-6 col-lg-4">
@@ -44,10 +58,10 @@
     {% endif %}
     {% if user.role == 'cocina' %}
     <div class="col-md-6 col-lg-4">
-      <div class="card card-domi role-tile disabled">
+      <a class="card card-domi hover role-tile" href="{% url 'cocina_tablero' %}">
         <i class="bi bi-fire"></i>
-        <div><div class="fw-bold">Tablero de cocina</div><small class="text-muted">Próximo sprint</small></div>
-      </div>
+        <div><div class="fw-bold">Tablero de cocina</div><small class="text-muted">Pedidos por preparar</small></div>
+      </a>
     </div>
     {% endif %}
     {% if user.role == 'repartidor' %}
