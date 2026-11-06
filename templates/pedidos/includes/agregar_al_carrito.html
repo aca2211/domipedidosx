@@ -1,0 +1,22 @@
+{% if user.is_authenticated and user.role == 'cliente' %}
+<form method="post" action="{% url 'carrito_agregar' %}" class="card-footer bg-white border-0 pt-0 pb-3">
+  {% csrf_token %}
+  <input type="hidden" name="product_id" value="{{ p.id }}">
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <div class="input-group">
+    {% if sede_id %}
+      <input type="hidden" name="sede_id" value="{{ sede_id }}">
+    {% else %}
+      <select name="sede_id" class="form-select form-select-sm" aria-label="Sede" required>
+        {% for sp in p.sedes_disponibles %}<option value="{{ sp.sede_id }}">{{ sp.sede.name }}</option>{% endfor %}
+      </select>
+    {% endif %}
+    <input type="number" name="cantidad" value="1" min="1" max="50" class="form-control form-control-sm" style="max-width: 80px;" aria-label="Cantidad">
+    <button class="btn btn-domi btn-sm" type="submit"><i class="bi bi-cart-plus me-1"></i>Agregar</button>
+  </div>
+</form>
+{% elif not user.is_authenticated %}
+<div class="card-footer bg-white border-0 pt-0 pb-3">
+  <a class="btn btn-outline-domi btn-sm w-100" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Ingresa para pedir</a>
+</div>
+{% endif %}

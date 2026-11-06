@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Crear cuenta · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="auth-card fade-in" style="max-width: 560px;">
+  <div class="card card-domi">
+    <div class="card-body p-4">
+      <h3 class="fw-bold mb-1">Crea tu cuenta</h3>
+      <p class="text-muted">Regístrate como cliente y empieza a pedir.</p>
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+      <form method="post" data-once>
+        {% csrf_token %}
+        {% for field in form %}{% include 'includes/field.html' %}{% endfor %}
+        <button class="btn btn-domi w-100 py-2" type="submit"><i class="bi bi-person-plus me-1"></i>Registrarme</button>
+      </form>
+    </div>
+  </div>
+  <p class="text-center mt-3">¿Ya tienes cuenta? <a href="{% url 'login' %}" class="fw-semibold">Ingresa</a></p>
+</div>
+{% endblock %}

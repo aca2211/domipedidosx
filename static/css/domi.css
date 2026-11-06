@@ -1,0 +1,29 @@
+:root {
+  --domi-red: #c00000;
+  --domi-red-dark: #8b0000;
+  --domi-red-soft: #fdecec;
+  --bs-primary: var(--domi-red);
+  --bs-primary-rgb: 192, 0, 0;
+  --bs-link-color: var(--domi-red);
+  --bs-link-hover-color: var(--domi-red-dark);
+  --bs-link-color-rgb: 192, 0, 0;
+}
+body { background: #f7f4f2; min-height: 100vh; display: flex; flex-direction: column; }
+main { flex: 1; }
+.navbar-domi { background: linear-gradient(90deg, var(--domi-red-dark), var(--domi-red)); }
+.btn-domi { background: var(--domi-red); border-color: var(--domi-red); color: #fff; font-weight: 600; }
+.btn-domi:hover, .btn-domi:focus { background: var(--domi-red-dark); border-color: var(--domi-red-dark); color: #fff; }
+.btn-outline-domi { color: var(--domi-red); border-color: var(--domi-red); font-weight: 600; }
+.btn-outline-domi:hover, .btn-outline-domi.active { background: var(--domi-red); border-color: var(--domi-red); color: #fff; }
+.form-control:focus, .form-select:focus { border-color: var(--domi-red); box-shadow: 0 0 0 .2rem rgba(192, 0, 0, .18); }
+.card-domi { border: 0; border-radius: 1rem; box-shadow: 0 2px 12px rgba(0, 0, 0, .08); transition: transform .2s, box-shadow .2s; }
+.card-domi.hover:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(139, 0, 0, .18); }
+.badge-domi { background: var(--domi-red-soft); color: var(--domi-red-dark); font-weight: 600; }
+.price { color: var(--domi-red-dark); font-weight: 700; font-size: 1.15rem; }
+.auth-card { max-width: 460px; margin: 0 auto; }
+.fade-in { animation: fadeIn .35s ease both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.role-tile { display: flex; align-items: center; gap: 1rem; padding: 1.25rem; text-decoration: none; color: inherit; }
+.role-tile i { font-size: 2rem; color: var(--domi-red); }
+.role-tile.disabled { opacity: .55; pointer-events: none; }
+footer { font-size: .85rem; }

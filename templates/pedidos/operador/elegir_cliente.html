@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo pedido · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <h2 class="fw-bold mb-1"><i class="bi bi-telephone-inbound me-2"></i>Nuevo pedido</h2>
+
+  {% if not sede %}
+    <p class="text-muted">Elige la sede con la que vas a trabajar.</p>
+    <div class="list-group">
+      {% for s in sedes %}
+        <a class="list-group-item list-group-item-action" href="?sede={{ s.id }}">
+          <strong>{{ s.name }}</strong><br><small class="text-muted">{{ s.address }}</small>
+        </a>
+      {% empty %}
+        <p class="text-muted">No hay sedes activas.</p>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">
+      <i class="bi bi-shop me-1"></i>Sede <strong>{{ sede.name }}</strong>
+      · <a href="?cambiar_sede=1">cambiar</a>
+    </p>
+
+    {% if cliente %}
+      <div class="alert alert-success">
+        <i class="bi bi-person-check me-1"></i>Cliente seleccionado:
+        <strong>{{ cliente.get_full_name|default:cliente.username }}</strong>
+        ({{ cliente.phone|default:"sin teléfono" }})
+      </div>
+    {% endif %}
+
+    <form method="get" class="card card-domi mb-3">
+      <div class="card-body">
+        <label for="q" class="form-label fw-semibold">Buscar cliente por usuario o teléfono</label>
+        <div class="input-group">
+          <input type="text" id="q" name="q" value="{{ q }}" class="form-control" placeholder="Ej: ana o 3001234567" autofocus>
+          <button class="btn btn-domi" type="submit"><i class="bi bi-search me-1"></i>Buscar</button>
+        </div>
+      </div>
+    </form>
+
+    {% if q %}
+      {% for c in resultados %}
+        <div class="card card-domi mb-2">
+          <div class="card-body d-flex justify-content-between align-items-center gap-2">
+            <div>
+              <div class="fw-bold">{{ c.get_full_name|default:c.username }}</div>
+              <small class="text-muted">@{{ c.username }} · {{ c.phone|default:"sin teléfono" }}</small>
+            </div>
+            <form method="post" action="{% url 'operador_seleccionar_cliente' %}">
+              {% csrf_token %}
+              <input type="hidden" name="cliente_id" value="{{ c.id }}">
+              <button class="btn btn-sm btn-domi" type="submit">Elegir</button>
+            </form>
+          </div>
+        </div>
+      {% empty %}
+        <p class="text-muted">No encontramos clientes con «{{ q }}».</p>
+      {% endfor %}
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

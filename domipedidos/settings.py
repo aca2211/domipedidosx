@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'users',
+    'menu',
+    'pedidos',
 ]
 
 MIDDLEWARE = [
@@ -54,13 +57,14 @@ ROOT_URLCONF = 'domipedidos.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'pedidos.context_processors.carrito',
             ],
         },
     },
@@ -125,3 +129,30 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# ---------- DomiPedidosX ----------
+AUTH_USER_MODEL = 'users.CustomUser'
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'login'
+
+# Sesiones seguras
+SESSION_COOKIE_AGE = 60 * 60 * 8
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+# ---------- Idioma y estáticos ----------
+LANGUAGE_CODE = 'es-co'
+TIME_ZONE = 'America/Bogota'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Archivos subidos por los usuarios (imágenes de productos)
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
