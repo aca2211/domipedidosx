@@ -6,6 +6,16 @@ class Pedido(models.Model):
     METODOS_PAGO =[('efectivo', 'Efectivo'), ('tarjeta', 'Tarjeta'), ('transferencia', 'Transferencia')]
     TIPOS_ENTREGA =[('domicilio', 'Domicilio'), ('mostrador', 'Mostrador')]
 
+    # Flujo del pedido (HU19): cada estado apunta al único estado que le sigue.
+    # 'entregado' y 'cancelado' son finales: no tienen siguiente.
+    TRANSICIONES = {
+        'recibido': 'en_preparacion',
+        'en_preparacion': 'listo',
+        'listo': 'entregado',
+        'entregado': None,
+        'cancelado': None,
+    }
+
     cliente = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pedidos', on_delete=models.CASCADE) 
     creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pedidos_creados', on_delete=models.CASCADE)
     sede = models.ForeignKey('menu.Sede', related_name='pedidos', on_delete=models.CASCADE)
@@ -21,6 +31,12 @@ class Pedido(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
        return f'Pedido #{self.pk}'
+
+    def siguiente_estado(self):
+        return self.TRANSICIONES.get(self.estado)
+
+    def puede_avanzar(self):
+        return self.siguiente_estado() is not None
 
 class DetallePedido(models.Model):
     pedido= models.ForeignKey(Pedido, related_name='detalles', on_delete=models.CASCADE)

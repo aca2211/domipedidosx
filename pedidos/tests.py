@@ -5,6 +5,9 @@ from django.test import TestCase
 from django.urls import reverse
 
 from menu.models import Category, Product, Sede, SedeProduct
+from users.models import Direccion
+
+from .models import DetallePedido, Pedido
 
 User = get_user_model()
 
@@ -25,6 +28,7 @@ class BaseTest(TestCase):
         SedeProduct.objects.create(sede=self.sede1, product=self.soda, is_available=False)  # agotado en sede1
         SedeProduct.objects.create(sede=self.sede2, product=self.soda)
         SedeProduct.objects.create(sede=self.sede2, product=self.burger)
+        self.direccion = Direccion.objects.create(user=self.cliente, label='Casa', address='Calle 5 # 6-7')
         self.client.force_login(self.cliente)
 
     def agregar(self, producto, sede=None, cantidad=1):
@@ -34,6 +38,11 @@ class BaseTest(TestCase):
 
     def carrito_sesion(self):
         return self.client.session.get('carrito', {})
+
+    def confirmar(self, **extra):
+        datos = {'direccion': self.direccion.id, 'metodo_pago': 'efectivo', 'observaciones': 'Sin cebolla'}
+        datos.update(extra)
+        return self.client.post(reverse('pedido_confirmar'), datos)
 
 
 class CarritoTests(BaseTest):  # HU13
@@ -127,3 +136,85 @@ class CarritoTests(BaseTest):  # HU13
             'next': 'https://sitio-malicioso.com/',
         })
         self.assertRedirects(r, reverse('carrito_ver'))
+
+
+class ConfirmarPedidoTests(BaseTest):  # HU14
+    def test_confirmar_crea_pedido_y_detalles(self):
+        self.agregar(self.burger, cantidad=2)
+        self.agregar(self.papas)
+        r = self.confirmar()
+        pedido = Pedido.objects.get()
+        self.assertRedirects(r, reverse('pedido_creado', args=[pedido.pk]))
+        self.assertEqual(pedido.estado, 'recibido')
+        self.assertEqual(pedido.cliente, self.cliente)
+        self.assertEqual(pedido.creado_por, self.cliente)
+        self.assertEqual(pedido.sede, self.sede1)
+        self.assertEqual(pedido.direccion, self.direccion)
+        self.assertEqual(pedido.metodo_pago, 'efectivo')
+        self.assertEqual(pedido.observaciones, 'Sin cebolla')
+        self.assertEqual(pedido.subtotal, Decimal('38000'))
+        self.assertEqual(pedido.costo_domicilio, Decimal('0'))
+        self.assertEqual(pedido.total, Decimal('38000'))
+        self.assertEqual(pedido.detalles.count(), 2)
+
+    def test_precio_queda_congelado(self):
+        self.agregar(self.burger, cantidad=2)
+        self.confirmar()
+        self.burger.price = Decimal('99999')
+        self.burger.save()
+        detalle = DetallePedido.objects.get()
+        pedido = Pedido.objects.get()
+        self.assertEqual(detalle.precio_unitario, Decimal('15000'))
+        self.assertEqual(detalle.subtotal, Decimal('30000'))
+        self.assertEqual(pedido.total, Decimal('30000'))
+
+    def test_producto_agotado_entre_carrito_y_confirmacion_bloquea(self):
+        self.agregar(self.burger)
+        SedeProduct.objects.filter(sede=self.sede1, product=self.burger).update(is_available=False)
+        r = self.confirmar()
+        self.assertRedirects(r, reverse('carrito_ver'))
+        self.assertEqual(Pedido.objects.count(), 0)
+        self.assertEqual(self.carrito_sesion()['items'], {str(self.burger.id): 1})
+
+    def test_sin_direcciones_no_crea_pedido(self):
+        self.cliente.direcciones.all().delete()
+        self.agregar(self.burger)
+        self.assertEqual(self.client.get(reverse('pedido_confirmar')).status_code, 302)
+        self.assertEqual(self.confirmar().status_code, 302)
+        self.assertEqual(Pedido.objects.count(), 0)
+
+    def test_no_acepta_direccion_de_otro_cliente(self):
+        ajena = Direccion.objects.create(user=self.otro, label='Casa', address='Otra calle 1')
+        self.agregar(self.burger)
+        r = self.confirmar(direccion=ajena.id)
+        self.assertEqual(r.status_code, 200)  # formulario inválido
+        self.assertEqual(Pedido.objects.count(), 0)
+
+    def test_carrito_vacio_no_crea_pedido(self):
+        r = self.client.get(reverse('pedido_confirmar'))
+        self.assertRedirects(r, reverse('menu_list'))
+        self.assertEqual(self.confirmar().status_code, 302)
+        self.assertEqual(Pedido.objects.count(), 0)
+
+    def test_el_carrito_se_vacia_tras_confirmar(self):
+        self.agregar(self.burger)
+        self.confirmar()
+        self.assertEqual(self.carrito_sesion().get('items', {}), {})
+
+    def test_metodo_de_pago_invalido_no_crea_pedido(self):
+        self.agregar(self.burger)
+        r = self.confirmar(metodo_pago='bitcoin')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Pedido.objects.count(), 0)
+
+    def test_pagina_de_pedido_creado_solo_para_el_dueno(self):
+        self.agregar(self.burger)
+        self.confirmar()
+        pedido = Pedido.objects.get()
+        self.assertEqual(self.client.get(reverse('pedido_creado', args=[pedido.pk])).status_code, 200)
+        self.client.force_login(self.otro)
+        self.assertEqual(self.client.get(reverse('pedido_creado', args=[pedido.pk])).status_code, 404)
+
+    def test_rol_incorrecto_recibe_403_al_confirmar(self):
+        self.client.force_login(self.cocina)
+        self.assertEqual(self.client.get(reverse('pedido_confirmar')).status_code, 403)
