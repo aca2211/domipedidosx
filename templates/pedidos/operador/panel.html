@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Panel del operador · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 me-2"></i>Panel del operador</h2>
+
+  {% if not sede %}
+    <p class="text-muted">Elige la sede con la que vas a trabajar.</p>
+    <div class="list-group">
+      {% for s in sedes %}
+        <a class="list-group-item list-group-item-action" href="?sede={{ s.id }}">
+          <strong>{{ s.name }}</strong><br><small class="text-muted">{{ s.address }}</small>
+        </a>
+      {% empty %}
+        <p class="text-muted">No hay sedes activas.</p>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">
+      <i class="bi bi-shop me-1"></i>Sede <strong>{{ sede.name }}</strong>
+      · <a href="?cambiar_sede=1">cambiar</a>
+    </p>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-6 col-lg-3">
+        <a class="card card-domi hover role-tile" href="{% url 'operador_elegir_cliente' %}">
+          <i class="bi bi-telephone-inbound"></i>
+          <div><div class="fw-bold">Nuevo pedido</div><small class="text-muted">Tomar un pedido por teléfono</small></div>
+        </a>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <a class="card card-domi hover role-tile" href="{% url 'menu_list' %}?sede={{ sede.id }}">
+          <i class="bi bi-journal-richtext"></i>
+          <div><div class="fw-bold">Ver menú</div><small class="text-muted">Productos de la sede</small></div>
+        </a>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <a class="card card-domi hover role-tile" href="/admin/menu/">
+          <i class="bi bi-shop"></i>
+          <div><div class="fw-bold">Gestionar menú</div><small class="text-muted">Sedes, categorías y productos</small></div>
+        </a>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <a class="card card-domi hover role-tile" href="/admin/pedidos/pedido/">
+          <i class="bi bi-receipt"></i>
+          <div><div class="fw-bold">Todos los pedidos</div><small class="text-muted">Historial completo</small></div>
+        </a>
+      </div>
+    </div>
+
+    <div class="card card-domi">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">Pedidos de hoy</h5>
+          <span class="badge badge-domi rounded-pill">{{ pedidos|length }}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Hora</th>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Estado</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in pedidos %}
+              <tr>
+                <td>{{ p.created_at|time:"H:i" }}</td>
+                <td>#{{ p.pk }}</td>
+                <td>{{ p.cliente.get_full_name|default:p.cliente.username }}</td>
+                <td>
+                  <span class="badge {% if p.estado == 'entregado' %}bg-success{% elif p.estado == 'cancelado' %}bg-danger{% elif p.estado == 'listo' %}bg-info text-dark{% elif p.estado == 'en_preparacion' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ p.get_estado_display }}</span>
+                </td>
+                <td class="text-end">${{ p.total|floatformat:0 }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-center text-muted py-4">Aún no hay pedidos hoy en esta sede.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

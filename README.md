@@ -1,13 +1,15 @@
-# DomiPedidosX 🍔🛵
+# DomiPedidosX 
+![Logo DomiPedidosX](docs/img/logo.jpeg)
 
 Sistema Web de Gestión de Pedidos y Domicilios para Restaurantes. Proyecto académico para la asignatura de Desarrollo de Software I (2026-II) - Universidad del Valle.
 
 ## Integrantes del Equipo
 
-* **Integrante 1:** Product Owner & UX/UI
-* **Integrante 2:** Scrum Master & DevOps
-* **Integrante 3:** Backend & DB Engineer
-* **Integrante 4:** Backend Feature Developer
+* **Miguel Ángel Martinez Eraso:** Product Owner & UX/UI
+* **Alejandro Cardona Arellano:** Scrum Master & DevOps
+* **Juan Manuel Muñoz Delgado:** Backend & DB Engineer
+* **Juan Camilo Ramos Hoyos:** Backend Feature Developer
+* **Andres Muñoz Moreno:** Frontend Feature Developer
 
 ## Stack Tecnológico
 
