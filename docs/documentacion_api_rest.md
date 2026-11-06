@@ -1,35 +1,32 @@
-# Documentación de la API REST - DomiPedidosX
+# Documentación de Rutas Web (Endpoints) - DomiPedidosX
 
-El proyecto DomiPedidosX expone una API REST para facilitar la integración futura con aplicaciones móviles u otros servicios externos. La documentación interactiva (Swagger/Redoc) está disponible cuando el servidor está en ejecución.
+Actualmente, DomiPedidosX opera mediante renderizado del lado del servidor (SSR) utilizando el motor de plantillas de Django. Las siguientes son las rutas (URLs) principales mapeadas en el sistema para cada módulo.
 
-## Accesos Rápidos
-* **Swagger UI:** `http://localhost:8000/api/docs/`
-* **Esquema JSON:** `http://localhost:8000/api/docs/schema.json`
+## 1. Módulo de Usuarios (`users.urls`)
 
-> **Nota para Postman:** Puedes importar la colección completa de Postman usando el archivo `domipedidosx_collection.json` ubicado en la carpeta `docs/postman/` del repositorio.
-
-## Endpoints Principales
-
-### 1. Autenticación y Usuarios (`/api/users/`)
-
-| Método | Endpoint | Descripción | Autenticación |
+| Método | Ruta | Descripción | Rol Requerido |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/users/register/` | Registra un nuevo cliente. | No |
-| `POST` | `/api/users/login/` | Autentica al usuario y devuelve el token (JWT o Session). | No |
-| `GET`  | `/api/users/profile/` | Devuelve los datos del usuario logueado. | Sí |
+| `GET/POST` | `/login/` | Iniciar sesión en la plataforma. | Público |
+| `GET/POST` | `/registro/` | Crear una nueva cuenta de cliente. | Público |
+| `GET/POST` | `/perfil/` | Ver o actualizar datos de contacto. | Cliente |
+| `GET/POST` | `/direcciones/nueva/` | Registrar una nueva dirección de entrega. | Cliente |
+| `POST` | `/recuperar/` | Envía correo de recuperación de contraseña (HU03). | Público |
 
-### 2. Gestión de Menú y Sedes (`/api/menu/`)
+## 2. Módulo de Menú (`menu.urls`)
 
-| Método | Endpoint | Descripción | Autenticación |
+| Método | Ruta | Descripción | Rol Requerido |
 | :--- | :--- | :--- | :--- |
-| `GET`  | `/api/menu/sedes/` | Lista todas las sedes activas. | No |
-| `GET`  | `/api/menu/products/` | Lista los productos disponibles, con filtros por categoría. | No |
-| `POST` | `/api/menu/products/` | Crea un nuevo producto (Solo Operador/Admin). | Sí (Rol Requerido) |
+| `GET` | `/menu/?sede={id}` | Muestra el catálogo de productos filtrado por sede y disponibilidad. | Público |
+| `GET/POST` | `/admin/menu/` | Gestión administrativa de categorías, sedes y productos. | Operador / Admin |
 
-### 3. Pedidos y Flujo (`/api/orders/`)
+## 3. Módulo de Pedidos (`pedidos.urls`)
 
-| Método | Endpoint | Descripción | Autenticación |
+| Método | Ruta | Descripción | Rol Requerido |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/orders/` | Crea un nuevo pedido desde el carrito. | Sí |
-| `GET`  | `/api/orders/{id}/` | Devuelve el detalle y estado actual de un pedido. | Sí |
-| `PATCH`| `/api/orders/{id}/status/`| Actualiza el estado del pedido (Cocina/Repartidor). | Sí (Rol Requerido)|
+| `GET` | `/carrito/` | Visualizar resumen, subtotal y total del carrito. | Cliente |
+| `POST` | `/carrito/agregar/` | Agrega un producto a la sesión del carrito. | Cliente |
+| `GET/POST` | `/pedido/confirmar/` | Checkout: Confirmar dirección, pago y crear orden (HU14). | Cliente |
+| `GET` | `/mis-pedidos/` | Historial de órdenes generadas por el usuario. | Cliente |
+| `GET` | `/cocina/tablero/?sede={id}` | Tablero Kanban de cocina (HU18). | Cocina |
+| `POST` | `/cocina/pedido/{id}/avanzar/` | Cambiar el estado de un pedido (HU19). | Cocina |
+| `GET` | `/operador/panel/` | Dashboard con pedidos del día en una sede específica (HU21). | Operador |
