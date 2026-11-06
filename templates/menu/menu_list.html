@@ -44,6 +44,7 @@
             <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ p.prep_time_minutes }} min</small>
             <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{% for sp in p.sedes_disponibles %}{{ sp.sede.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
           </div>
+          {% include 'pedidos/includes/agregar_al_carrito.html' %}
         </div>
       </div>
     {% endfor %}
