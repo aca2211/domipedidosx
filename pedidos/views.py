@@ -1,4 +1,6 @@
 from django.contrib import messages
+from django.db.models import Count
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import NoReverseMatch, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -8,10 +10,14 @@ from .cart import Carrito, CarritoError
 from .forms import ConfirmarPedidoForm
 from .models import Pedido
 from .permissions import rol_requerido
-from .services import crear_pedido
+from .services import CancelacionError, cancelar_pedido, crear_pedido
 
-# Nombre de la URL donde el cliente crea direcciones (HU05, la entrega el backend).
+
 URL_CREAR_DIRECCION = 'direccion_crear'
+
+# HU20: pasos que ve el cliente en el indicador de progreso
+PASOS = ['recibido', 'en_preparacion', 'listo', 'entregado']
+ESTADOS_FINALES = ('entregado', 'cancelado')
 
 
 def _entero(valor):
@@ -32,10 +38,9 @@ def _url_crear_direccion():
     try:
         return reverse(URL_CREAR_DIRECCION)
     except NoReverseMatch:
-        return reverse('home')  # mientras el backend publica la pantalla de direcciones
+        return reverse('home')  
 
 
-# ---------- HU13 · Carrito ----------
 
 @rol_requerido('cliente')
 def ver_carrito(request):
@@ -83,7 +88,7 @@ def quitar_del_carrito(request, producto_id):
     return redirect('carrito_ver')
 
 
-# ---------- HU14 · Confirmar pedido ----------
+
 
 @rol_requerido('cliente')
 def confirmar_pedido(request):
@@ -124,4 +129,39 @@ def pedido_creado(request, pk):
         Pedido.objects.select_related('sede', 'direccion').prefetch_related('detalles__producto'),
         pk=pk, cliente=request.user,
     )
-    return render(request, 'pedidos/pedido_creado.html', {'pedido': pedido})
+    nombres = dict(Pedido.ESTADOS)
+    indice = PASOS.index(pedido.estado) if pedido.estado in PASOS else -1
+    pasos = [
+        {'nombre': nombres[clave], 'hecho': i < indice, 'actual': i == indice}
+        for i, clave in enumerate(PASOS)
+    ]
+    return render(request, 'pedidos/pedido_creado.html', {
+        'pedido': pedido,
+        'pasos': pasos,
+        'refrescar': pedido.estado not in ESTADOS_FINALES,  # refresco automático mientras siga en curso
+    })
+
+
+@rol_requerido('cliente')
+@require_POST
+def cancelar_mi_pedido(request, pk):
+    try:
+        cancelar_pedido(pk, request.user)
+    except Pedido.DoesNotExist:
+        raise Http404  
+    except CancelacionError as e:
+        messages.error(request, str(e))
+    else:
+        messages.success(request, f'Tu pedido #{pk} fue cancelado.')
+    return redirect('pedido_creado', pk=pk)
+
+
+@rol_requerido('cliente')
+def mis_pedidos(request):
+    pedidos = (
+        Pedido.objects.filter(cliente=request.user)
+        .select_related('sede')
+        .annotate(num_productos=Count('detalles'))
+        .order_by('-created_at', '-id')
+    )
+    return render(request, 'pedidos/mis_pedidos.html', {'pedidos': pedidos})
