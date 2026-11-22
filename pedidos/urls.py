@@ -17,4 +17,10 @@ urlpatterns = [
     path('operador/panel/', views_operador.panel_operador, name='operador_panel'),
     path('operador/pedido/nuevo/', views_operador.elegir_cliente, name='operador_elegir_cliente'),
     path('operador/pedido/cliente/', views_operador.seleccionar_cliente, name='operador_seleccionar_cliente'),
+    path('operador/pedido/armar/', views_operador.armar_pedido, name='operador_armar_pedido'),
+    path('operador/pedido/agregar/', views_operador.agregar_producto, name='operador_agregar'),
+    path('operador/pedido/actualizar/<str:clave>/', views_operador.actualizar_linea, name='operador_actualizar'),
+    path('operador/pedido/quitar/<str:clave>/', views_operador.quitar_linea, name='operador_quitar'),
+    path('operador/pedido/confirmar/', views_operador.confirmar_pedido_operador, name='operador_confirmar'),
+    path('operador/pedido/<int:pk>/creado/', views_operador.pedido_creado_operador, name='operador_pedido_creado'),
 ]
