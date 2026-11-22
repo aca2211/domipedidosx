@@ -156,3 +156,6 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 # Archivos subidos por los usuarios (imágenes de productos)
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Remitente de los correos del sistema (HU03). El envío usa MAILERS (consola en desarrollo).
+DEFAULT_FROM_EMAIL = 'DomiPedidosX <no-responder@domipedidosx.local>'

@@ -1,23 +1,115 @@
 {% extends "admin/base_site.html" %}
+{% load static %}
+
 {% block extrastyle %}{{ block.super }}
 <style>
+  /* Paleta de marca DomiPedidosX para el panel de administración */
   html[data-theme="light"], :root {
-    --primary: #b30000;
-    --secondary: #8b0000;
-    --accent: #ffd54f;
-    --link-fg: #b30000;
-    --link-hover-color: #8b0000;
-    --link-selected-fg: #8b0000;
-    --button-bg: #b30000;
-    --button-hover-bg: #8b0000;
-    --default-button-bg: #8b0000;
-    --default-button-hover-bg: #5c0000;
-    --object-tools-bg: #8b0000;
-    --object-tools-hover-bg: #5c0000;
-    --breadcrumbs-bg: #b30000;
-    --breadcrumbs-fg: #ffd9d9;
-    --header-bg: #8b0000;
-    --selected-row: #fdecec;
+    --primary: #A14646;
+    --secondary: #A14646;
+    --accent: #FDB773;
+    --header-bg: #A14646;            /* encabezados de módulos y del filtro */
+    --link-fg: #A14646;
+    --link-hover-color: #DA6556;
+    --link-selected-fg: #7E3535;
+    --button-bg: #A14646;
+    --button-hover-bg: #7E3535;
+    --default-button-bg: #7E3535;
+    --default-button-hover-bg: #5A2626;
+    --object-tools-bg: #A14646;
+    --object-tools-hover-bg: #7E3535;
+    --breadcrumbs-bg: #FBEDEA;
+    --breadcrumbs-fg: #7E3535;
+    --breadcrumbs-link-fg: #A14646;
+    --darkened-bg: #FBF6F3;
+    --selected-row: #FBEDEA;
+    --hairline-color: #EFE3DF;
+    --domi-header-bg: #FFFFFF;
+    --domi-header-fg: #5B4A48;
+    --domi-header-link: #A14646;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --primary: #7E3535;
+      --secondary: #A14646;
+      --header-bg: #7E3535;
+      --link-fg: #EB895B;
+      --link-hover-color: #FDB773;
+      --link-selected-fg: #FDB773;
+      --button-bg: #A14646;
+      --button-hover-bg: #DA6556;
+      --default-button-bg: #7E3535;
+      --default-button-hover-bg: #A14646;
+      --object-tools-bg: #7E3535;
+      --object-tools-hover-bg: #A14646;
+      --breadcrumbs-bg: #3A2020;
+      --breadcrumbs-fg: #E9D8D4;
+      --breadcrumbs-link-fg: #EB895B;
+      --darkened-bg: #1C1515;
+      --selected-row: #3A2020;
+      --domi-header-bg: #241A1A;
+      --domi-header-fg: #E9D8D4;
+      --domi-header-link: #EB895B;
+    }
+  }
+  html[data-theme="dark"] {
+    --primary: #7E3535;
+    --secondary: #A14646;
+    --header-bg: #7E3535;
+    --link-fg: #EB895B;
+    --link-hover-color: #FDB773;
+    --link-selected-fg: #FDB773;
+    --button-bg: #A14646;
+    --button-hover-bg: #DA6556;
+    --default-button-bg: #7E3535;
+    --default-button-hover-bg: #A14646;
+    --object-tools-bg: #7E3535;
+    --object-tools-hover-bg: #A14646;
+    --breadcrumbs-bg: #3A2020;
+    --breadcrumbs-fg: #E9D8D4;
+    --breadcrumbs-link-fg: #EB895B;
+    --darkened-bg: #1C1515;
+    --selected-row: #3A2020;
+    --domi-header-bg: #241A1A;
+    --domi-header-fg: #E9D8D4;
+    --domi-header-link: #EB895B;
+  }
+
+  /* Encabezado claro con el logo, igual que el sitio */
+  #header { background: var(--domi-header-bg); color: var(--domi-header-fg); border-bottom: 4px solid #FDB773; padding: 8px 40px; }
+  #header a:link, #header a:visited, #logout-form button { color: var(--domi-header-link); }
+  #header a:hover, #header a:focus { color: #DA6556; }
+  #user-tools { color: var(--domi-header-fg); }
+  #user-tools strong { color: var(--domi-header-link); }
+  .theme-toggle svg.theme-icon-when-auto,
+  .theme-toggle svg.theme-icon-when-dark,
+  .theme-toggle svg.theme-icon-when-light { fill: var(--domi-header-link); color: var(--domi-header-bg); }
+  #site-name { margin: 0; font-weight: 700; }
+  #site-name a.domi-brand, #site-name a.domi-brand:link, #site-name a.domi-brand:visited {
+    display: flex; align-items: center; gap: .6rem; color: var(--domi-header-link); text-decoration: none;
+  }
+  .domi-brand img { height: 34px; width: auto; }
+  .domi-brand .nombre { font-size: 1.35rem; letter-spacing: -.3px; }
+  .domi-brand .nombre b { color: #EB895B; font-weight: 700; }
+  .domi-brand small { font-size: .8rem; font-weight: 500; color: var(--domi-header-fg); border-left: 2px solid #FDB773; padding-left: .6rem; }
+  #changelist-filter h2 { background: var(--header-bg); }
+  .breadcrumbs { border-bottom: 1px solid var(--hairline-color); }
+  @media (max-width: 767px) {
+    #header { padding: 8px 16px; }
+    .domi-brand small { display: none; }
   }
 </style>
+{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+  <a class="domi-brand" href="{% url 'admin:index' %}">
+    <img src="{% static 'img/logo-icono.png' %}" alt="">
+    <span class="nombre">DomiPedidos<b>X</b></span>
+    <small>Administración</small>
+  </a>
+</div>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
 {% endblock %}

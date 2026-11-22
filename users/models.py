@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
 
@@ -17,10 +18,32 @@ class CustomUser(AbstractUser):
         ('repartidor', 'Repartidor'),
         ('admin', 'Administrador'),
     )
+    # Roles que trabajan en una sede concreta y por tanto la necesitan.
+    ROLES_CON_SEDE = ('operador', 'cocina')
+
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='cliente')
     # blank=True para no romper cuentas existentes (p. ej. el superusuario);
     # el formulario de registro de clientes lo exige.
     phone = models.CharField('teléfono', max_length=16, blank=True, validators=[phone_validator])
+    sede = models.ForeignKey(
+        'menu.Sede', verbose_name='sede', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='personal',
+        help_text='Sede donde trabaja (obligatoria para operador y cocina).',
+    )
+
+    def clean(self):
+        super().clean()
+        if self.role in self.ROLES_CON_SEDE and not self.sede_id:
+            raise ValidationError({'sede': 'Los roles operador y cocina deben tener una sede asignada.'})
+
+    def save(self, *args, **kwargs):
+        # El rol da acceso al admin: operador entra (con permisos limitados en menu/admin.py)
+        # y el administrador del sistema es superusuario. Solo se promueve, nunca se degrada.
+        if self.role == 'admin':
+            self.is_staff = self.is_superuser = True
+        elif self.role == 'operador':
+            self.is_staff = True
+        super().save(*args, **kwargs)
 
 
 class Direccion(models.Model):

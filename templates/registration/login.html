@@ -14,6 +14,7 @@
         {% for field in form %}{% include 'includes/field.html' %}{% endfor %}
         <button class="btn btn-domi w-100 py-2" type="submit"><i class="bi bi-box-arrow-in-right me-1"></i>Ingresar</button>
       </form>
+      <p class="text-center small mt-3 mb-0"><a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a></p>
     </div>
   </div>
   <p class="text-center mt-3">¿No tienes cuenta? <a href="{% url 'register' %}" class="fw-semibold">Regístrate aquí</a></p>

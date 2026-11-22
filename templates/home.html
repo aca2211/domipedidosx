@@ -25,6 +25,12 @@
         <div><div class="fw-bold">Mis pedidos</div><small class="text-muted">Historial y estado de tus pedidos</small></div>
       </a>
     </div>
+    <div class="col-md-6 col-lg-4">
+      <a class="card card-domi hover role-tile" href="{% url 'perfil' %}">
+        <i class="bi bi-person-gear"></i>
+        <div><div class="fw-bold">Mi perfil</div><small class="text-muted">Datos de contacto y direcciones</small></div>
+      </a>
+    </div>
     {% endif %}
     {% if user.role == 'operador' %}
     <div class="col-md-6 col-lg-4">
