@@ -173,7 +173,8 @@ class AccesoOperadorTests(TestCase):
         r = self.client.get(reverse('admin:menu_sedeproduct_delete', args=[self.sp_centro.pk]))
         self.assertEqual(r.status_code, 403)
 
-    def test_no_edita_productos(self):
+    def test_no_edita_productos_compartidos_con_otra_sede(self):
+        SedeProduct.objects.create(sede=self.norte, product=self.burger)  # ahora se vende en dos sedes
         self.client.post(reverse('admin:menu_product_change', args=[self.burger.pk]), {
             'category': self.burger.category_id, 'name': 'Cambiado',
             'description': 'x', 'price': '1', 'prep_time_minutes': 15,
@@ -650,3 +651,136 @@ class RolesDesdeAdminTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         cliente.refresh_from_db()
         self.assertEqual(cliente.role, 'cliente')
+
+
+# ---------- El operador gestiona categorías, productos y opciones de su sede (HU08, HU09, HU10) ----------
+from menu.models import ProductOption
+
+
+class OperadorGestionaMenuTests(TestCase):
+    def setUp(self):
+        self.centro = Sede.objects.create(name='Centro', address='Cra 1')
+        self.norte = Sede.objects.create(name='Norte', address='Cra 2')
+        self.cat = Category.objects.create(name='Platos')
+        self.burger = Product.objects.create(category=self.cat, name='Hamburguesa', description='x', price=10000)
+        self.pizza = Product.objects.create(category=self.cat, name='Pizza', description='x', price=20000)
+        SedeProduct.objects.create(sede=self.centro, product=self.burger)   # solo en Centro
+        SedeProduct.objects.create(sede=self.norte, product=self.pizza)     # solo en Norte
+        self.op = CustomUser.objects.create_user(
+            'oscar', 'o@test.com', 'ClaveSegura#2026', role='operador', sede=self.centro)
+        self.client.force_login(self.op)
+
+    def datos_producto(self, **extra):
+        datos = {
+            'category': self.cat.pk, 'name': 'Nuevo plato', 'description': 'rico',
+            'price': '12000', 'prep_time_minutes': 15,
+        }
+        datos.update(extra)
+        return datos
+
+    # --- HU08: categorías ---
+    def test_crea_categorias(self):
+        r = self.client.post(reverse('admin:menu_category_add'), {'name': 'Postres', 'description': 'dulces'})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(Category.objects.filter(name='Postres').exists())
+
+    def test_operador_sin_sede_no_crea_categorias(self):
+        sin = CustomUser.objects.create_user('sinsede2', 's2@test.com', 'ClaveSegura#2026', role='operador')
+        self.client.force_login(sin)
+        self.assertEqual(self.client.get(reverse('admin:menu_category_add')).status_code, 403)
+
+    def test_edita_una_categoria_sin_productos_de_otras_sedes(self):
+        postres = Category.objects.create(name='Postres')
+        self.client.post(reverse('admin:menu_category_change', args=[postres.pk]), {
+            'name': 'Dulces', 'description': '',
+        })
+        postres.refresh_from_db()
+        self.assertEqual(postres.name, 'Dulces')
+
+    def test_no_edita_una_categoria_con_productos_de_otra_sede(self):
+        # «Platos» tiene la Pizza, que se vende en Norte
+        self.client.post(reverse('admin:menu_category_change', args=[self.cat.pk]), {
+            'name': 'Cambiada', 'description': '',
+        })
+        self.cat.refresh_from_db()
+        self.assertEqual(self.cat.name, 'Platos')
+
+    def test_no_borra_categorias(self):
+        r = self.client.get(reverse('admin:menu_category_delete', args=[self.cat.pk]))
+        self.assertEqual(r.status_code, 403)
+
+    # --- HU09: productos ---
+    def test_crea_un_producto_y_queda_en_su_sede(self):
+        r = self.client.post(reverse('admin:menu_product_add'), self.datos_producto())
+        self.assertEqual(r.status_code, 302)
+        nuevo = Product.objects.get(name='Nuevo plato')
+        sp = SedeProduct.objects.get(product=nuevo)
+        self.assertEqual(sp.sede, self.centro)
+        self.assertTrue(sp.is_available)
+
+    def test_el_producto_nuevo_aparece_en_su_listado(self):
+        self.client.post(reverse('admin:menu_product_add'), self.datos_producto())
+        r = self.client.get(reverse('admin:menu_product_changelist'))
+        self.assertContains(r, 'Nuevo plato')
+
+    def test_operador_sin_sede_no_crea_productos(self):
+        sin = CustomUser.objects.create_user('sinsede3', 's3@test.com', 'ClaveSegura#2026', role='operador')
+        self.client.force_login(sin)
+        self.assertEqual(self.client.get(reverse('admin:menu_product_add')).status_code, 403)
+
+    def test_edita_un_producto_exclusivo_de_su_sede(self):
+        self.client.post(reverse('admin:menu_product_change', args=[self.burger.pk]),
+                         self.datos_producto(name='Hamburguesa doble', price='15000'))
+        self.burger.refresh_from_db()
+        self.assertEqual(self.burger.name, 'Hamburguesa doble')
+
+    def test_no_edita_un_producto_compartido(self):
+        SedeProduct.objects.create(sede=self.norte, product=self.burger)
+        self.client.post(reverse('admin:menu_product_change', args=[self.burger.pk]),
+                         self.datos_producto(name='Hackeada'))
+        self.burger.refresh_from_db()
+        self.assertEqual(self.burger.name, 'Hamburguesa')
+
+    def test_no_borra_productos(self):
+        r = self.client.get(reverse('admin:menu_product_delete', args=[self.burger.pk]))
+        self.assertEqual(r.status_code, 403)
+
+    # --- HU10: opciones del producto ---
+    def datos_opcion(self, producto, **extra):
+        datos = {'product': producto.pk, 'kind': 'addon', 'name': 'Queso', 'extra_price': '2000', 'is_active': 'on'}
+        datos.update(extra)
+        return datos
+
+    def test_crea_opciones_para_un_producto_de_su_sede(self):
+        r = self.client.post(reverse('admin:menu_productoption_add'), self.datos_opcion(self.burger))
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(ProductOption.objects.filter(product=self.burger, name='Queso').exists())
+
+    def test_no_crea_opciones_para_productos_de_otra_sede(self):
+        self.client.post(reverse('admin:menu_productoption_add'), self.datos_opcion(self.pizza))
+        self.assertEqual(ProductOption.objects.count(), 0)
+
+    def test_no_crea_opciones_para_un_producto_compartido(self):
+        SedeProduct.objects.create(sede=self.norte, product=self.burger)
+        self.client.post(reverse('admin:menu_productoption_add'), self.datos_opcion(self.burger))
+        self.assertEqual(ProductOption.objects.count(), 0)
+
+    def test_edita_una_opcion_de_un_producto_exclusivo(self):
+        op = ProductOption.objects.create(product=self.burger, kind='addon', name='Queso', extra_price=2000)
+        self.client.post(reverse('admin:menu_productoption_change', args=[op.pk]),
+                         self.datos_opcion(self.burger, extra_price='2500'))
+        op.refresh_from_db()
+        self.assertEqual(op.extra_price, 2500)
+
+    def test_no_edita_una_opcion_de_un_producto_compartido(self):
+        op = ProductOption.objects.create(product=self.burger, kind='addon', name='Queso', extra_price=2000)
+        SedeProduct.objects.create(sede=self.norte, product=self.burger)
+        self.client.post(reverse('admin:menu_productoption_change', args=[op.pk]),
+                         self.datos_opcion(self.burger, extra_price='9999'))
+        op.refresh_from_db()
+        self.assertEqual(op.extra_price, 2000)
+
+    def test_no_borra_opciones(self):
+        op = ProductOption.objects.create(product=self.burger, kind='addon', name='Queso', extra_price=2000)
+        r = self.client.get(reverse('admin:menu_productoption_delete', args=[op.pk]))
+        self.assertEqual(r.status_code, 403)
