@@ -23,7 +23,7 @@ A continuación se detallan las Historias de Usuario (HU) priorizadas para el in
 | **HU07** | Como administrador deseo registrar y editar sedes con su horario para manejar varias sucursales. | MUST | 3 |
 | **HU08** | Como operador de sede deseo crear categorías para organizar el menú. | MUST | 2 |
 | **HU09** | Como operador de sede deseo registrar productos con imagen, precio y tiempo de preparación para armar el menú. | MUST | 5 |
-| **HU10** | Como operador de sede deseo definir opciones del producto (tamaños, adiciones) para que el cliente lo personalice. | SHOULD | 5 |
+| **HU10** | Como operador de sede deseo definir opciones del producto (tamaños, adiciones, ingredientes excluibles) para que el cliente lo personalice. | SHOULD | 5 |
 | **HU11** | Como operador de sede deseo marcar un producto como disponible o no en mi sede para no vender lo que no hay. | MUST | 2 |
 | **HU12** | Como cliente deseo ver el menú con filtros y búsqueda para encontrar rápido lo que quiero. | MUST | 3 |
 | **HU39** | Como usuario deseo usar la aplicación desde mi celular para pedir desde cualquier lugar (diseño responsive). | MUST | 3 |

@@ -104,6 +104,11 @@ class Command(BaseCommand):
             help='Borra los pedidos del cliente demo y los vuelve a crear.',
         )
         parser.add_argument(
+            '--ocultar-otros', action='store_true',
+            help='Marca como no disponibles los productos que no son del demo (por ejemplo, '
+                 'datos de prueba anteriores) para que el menú quede limpio. No borra nada.',
+        )
+        parser.add_argument(
             '--force', action='store_true',
             help='Permite correr el comando con DEBUG=False (no lo uses en producción).',
         )
@@ -117,6 +122,8 @@ class Command(BaseCommand):
         with transaction.atomic():
             sedes = self._sedes()
             productos = self._menu(sedes)
+            if options['ocultar_otros']:
+                self._ocultar_otros(productos)
             usuarios = self._usuarios()
             self._direccion(usuarios['cliente'])
             self._pedidos(usuarios, sedes, productos, options['reiniciar_pedidos'])
@@ -168,6 +175,15 @@ class Command(BaseCommand):
                 )
                 total += 1
         self.stdout.write(f'Opciones de producto: {total}')
+
+    def _ocultar_otros(self, productos):
+        """Oculta del menú los productos que no son del demo, sin borrarlos (pueden tener pedidos)."""
+        ocultos = (
+            SedeProduct.objects.filter(is_available=True)
+            .exclude(product__in=productos.values())
+            .update(is_available=False)
+        )
+        self.stdout.write(f'Productos ajenos al demo ocultados del menú: {ocultos}')
 
     # ---------- usuarios ----------
     def _usuarios(self):
