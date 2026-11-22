@@ -1,5 +1,6 @@
 from datetime import time
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -68,3 +69,45 @@ class SedeProduct(models.Model):
     def __str__(self):
         return f'{self.product} en {self.sede}'
 
+
+class ProductOption(models.Model):
+    """Opción de personalización de un producto (HU10): tamaño, adición o ingrediente excluible.
+
+    - Tamaño: el cliente elige uno; el recargo se suma al precio base del producto.
+    - Adición: el cliente puede elegir varias; cada una suma su recargo.
+    - Exclusión: ingrediente que el cliente puede quitar; no cambia el precio.
+    """
+    SIZE = 'size'
+    ADDON = 'addon'
+    EXCLUSION = 'exclusion'
+    KIND_CHOICES = [
+        (SIZE, 'Tamaño'),
+        (ADDON, 'Adición'),
+        (EXCLUSION, 'Ingrediente excluible'),
+    ]
+
+    product = models.ForeignKey(Product, related_name='options', on_delete=models.CASCADE)
+    kind = models.CharField('tipo', max_length=10, choices=KIND_CHOICES)
+    name = models.CharField('nombre', max_length=100)
+    extra_price = models.DecimalField(
+        'recargo', max_digits=8, decimal_places=2, default=0,
+        validators=[MinValueValidator(0)],
+        help_text='Se suma al precio base. Las exclusiones no llevan recargo.',
+    )
+    is_active = models.BooleanField('activa', default=True)
+
+    class Meta:
+        verbose_name = 'opción de producto'
+        verbose_name_plural = 'opciones de producto'
+        ordering = ['kind', 'extra_price', 'name']
+        constraints = [
+            models.UniqueConstraint(fields=['product', 'kind', 'name'], name='unica_opcion_por_producto'),
+        ]
+
+    def __str__(self):
+        return f'{self.get_kind_display()}: {self.name} ({self.product})'
+
+    def clean(self):
+        super().clean()
+        if self.kind == self.EXCLUSION and self.extra_price:
+            raise ValidationError({'extra_price': 'Un ingrediente excluible no puede tener recargo.'})

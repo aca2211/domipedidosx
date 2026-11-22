@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.conf import settings
 
@@ -44,3 +46,13 @@ class DetallePedido(models.Model):
     cantidad= models.PositiveIntegerField()
     precio_unitario= models.DecimalField(max_digits=10, decimal_places=2)
     subtotal= models.DecimalField(max_digits=12, decimal_places=2)
+    # Opciones elegidas al pedir (HU10), congeladas: [{'kind': 'size'|'addon'|'exclusion', 'name': ..., 'extra': '1500.00'}]
+    opciones= models.JSONField(default=list, blank=True)
+
+    @property
+    def opciones_lista(self):
+        """Las opciones listas para mostrar en las plantillas."""
+        return [
+            {**o, 'con_recargo': Decimal(o.get('extra') or '0') > 0}
+            for o in self.opciones
+        ]

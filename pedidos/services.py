@@ -26,6 +26,8 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
         agotados = [l['producto'].name for l in resumen['lineas'] if not l['disponible']]
         if agotados:
             raise CarritoError('Ya no hay disponibilidad de: ' + ', '.join(agotados) + '.')
+        if resumen['hay_opciones_invalidas']:
+            raise CarritoError('Alguna opción de tu carrito ya no está disponible. Quita ese producto y vuelve a agregarlo.')
 
         pedido = Pedido.objects.create(
             cliente=cliente,
@@ -45,8 +47,13 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
                 pedido=pedido,
                 producto=l['producto'],
                 cantidad=l['cantidad'],
-                precio_unitario=l['precio'],  # precio congelado
+                precio_unitario=l['precio'],  # precio congelado (base + recargos de opciones)
                 subtotal=l['subtotal'],
+                # Copia de las opciones elegidas: no cambia si el menú se edita después (HU10)
+                opciones=[
+                    {'kind': o['kind'], 'name': o['name'], 'extra': str(o['extra'])}
+                    for o in l['opciones']
+                ],
             )
             for l in resumen['lineas']
         ])

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sede, Category, Product, SedeProduct
+from .models import Sede, Category, Product, ProductOption, SedeProduct
 
 @admin.register(Sede)
 class SedeAdmin(admin.ModelAdmin):
@@ -14,12 +14,17 @@ class SedeProductInline(admin.TabularInline):
     model = SedeProduct
     extra = 1
 
+class ProductOptionInline(admin.TabularInline):
+    """Tamaños, adiciones e ingredientes excluibles del producto (HU10)."""
+    model = ProductOption
+    extra = 1
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'price', 'prep_time_minutes')
     list_filter = ('category', 'sedes')
     search_fields = ('name',)
-    inlines = [SedeProductInline]
+    inlines = [SedeProductInline, ProductOptionInline]
 
 @admin.register(SedeProduct)
 class SedeProductAdmin(admin.ModelAdmin):

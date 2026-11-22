@@ -37,6 +37,7 @@
       <hr>
       {% for d in pedido.detalles.all %}
         <div class="d-flex justify-content-between small py-1"><span>{{ d.cantidad }} × {{ d.producto.name }}</span><span>${{ d.subtotal|floatformat:0 }}</span></div>
+        {% include 'pedidos/includes/opciones.html' with opciones=d.opciones_lista %}
       {% endfor %}
       <hr>
       <div class="d-flex justify-content-between"><span>Domicilio</span><span>${{ pedido.costo_domicilio|floatformat:0 }}</span></div>

@@ -1,0 +1,14 @@
+{# Opciones elegidas de una línea (HU10). Recibe «opciones»: lista de {kind, name, extra, con_recargo}. #}
+{% if opciones %}
+<ul class="list-unstyled small mb-0 ms-3">
+  {% for o in opciones %}
+    {% if o.kind == 'exclusion' %}
+      <li class="text-danger fw-semibold">Sin {{ o.name }}</li>
+    {% elif o.kind == 'addon' %}
+      <li class="text-muted">+ {{ o.name }}{% if o.con_recargo %} (+${{ o.extra|floatformat:0 }}){% endif %}</li>
+    {% else %}
+      <li class="text-muted">Tamaño: {{ o.name }}{% if o.con_recargo %} (+${{ o.extra|floatformat:0 }}){% endif %}</li>
+    {% endif %}
+  {% endfor %}
+</ul>
+{% endif %}

@@ -1,7 +1,7 @@
 """Carrito de compras guardado en la sesión (HU13). No usa modelos propios."""
 from decimal import Decimal
 
-from menu.models import Product, Sede, SedeProduct
+from menu.models import Product, ProductOption, Sede, SedeProduct
 
 SESSION_KEY = 'carrito'
 COSTO_DOMICILIO = Decimal('0') 
@@ -25,12 +25,39 @@ def validar_cantidad(valor):
     return cantidad
 
 
+def clave_linea(producto_id, opcion_ids=()):
+    """Identifica una línea del carrito: «12» si no tiene opciones, «12-5-8» con las opciones 5 y 8 (HU10).
+
+    Un mismo producto con distintas opciones son líneas distintas.
+    """
+    return '-'.join([str(producto_id)] + [str(i) for i in sorted(set(opcion_ids))])
+
+
+def separar_clave(clave):
+    """Devuelve (producto_id, [opcion_ids]) o None si la clave no es válida."""
+    try:
+        producto_id, *opciones = [int(x) for x in str(clave).split('-')]
+    except ValueError:
+        return None
+    return producto_id, opciones
+
+
+def describir_opcion(opcion):
+    return {
+        'kind': opcion.kind,
+        'name': opcion.name,
+        'extra': opcion.extra_price,
+        'con_recargo': opcion.extra_price > 0,
+    }
+
+
 class Carrito:
     def __init__(self, request):
         self.session = request.session
         data = self.session.get(SESSION_KEY) or {}
         self.sede_id = data.get('sede_id')
-        self.items = {int(k): int(v) for k, v in (data.get('items') or {}).items()}
+        # clave de línea -> cantidad (la clave lleva el producto y sus opciones, ver clave_linea)
+        self.items = {str(k): int(v) for k, v in (data.get('items') or {}).items()}
 
 
     def _guardar(self):
@@ -53,9 +80,12 @@ class Carrito:
         return Sede.objects.filter(pk=self.sede_id).first() if self.sede_id else None
 
     def resumen(self):
-        """Líneas con precio actual, disponibilidad en la sede y totales."""
-        ids = list(self.items)
+        """Líneas con precio actual (base + recargos de opciones), disponibilidad en la sede y totales."""
+        partes = {clave: separar_clave(clave) for clave in self.items}
+        ids = {p[0] for p in partes.values() if p}
+        opcion_ids = {i for p in partes.values() if p for i in p[1]}
         productos = {p.id: p for p in Product.objects.filter(pk__in=ids).select_related('category')}
+        opciones = {o.id: o for o in ProductOption.objects.filter(pk__in=opcion_ids, is_active=True)}
         disponibles = set()
         if self.sede_id and ids:
             disponibles = set(
@@ -65,18 +95,25 @@ class Carrito:
                 ).values_list('product_id', flat=True)
             )
         lineas = []
-        for pid, cantidad in self.items.items():
+        for clave, cantidad in self.items.items():
+            pid, ops = partes[clave] or (None, [])
             producto = productos.get(pid)
             if producto is None:
                 continue
+            elegidas = [opciones[i] for i in ops if i in opciones and opciones[i].product_id == pid]
+            precio = producto.price + sum((o.extra_price for o in elegidas), Decimal('0'))
             lineas.append({
+                'clave': clave,
                 'producto': producto,
                 'cantidad': cantidad,
-                'precio': producto.price,
-                'subtotal': producto.price * cantidad,
+                'precio': precio,
+                'subtotal': precio * cantidad,
                 'disponible': pid in disponibles,
+                'opciones': [describir_opcion(o) for o in elegidas],
+                # True si alguna opción de la línea se desactivó o se borró desde que se agregó
+                'opciones_invalidas': len(elegidas) != len(ops),
             })
-        lineas.sort(key=lambda l: l['producto'].name)
+        lineas.sort(key=lambda l: (l['producto'].name, l['clave']))
         subtotal = sum((l['subtotal'] for l in lineas), Decimal('0'))
         return {
             'lineas': lineas,
@@ -85,11 +122,25 @@ class Carrito:
             'total': subtotal + COSTO_DOMICILIO,
             'hay_agotados': any(not l['disponible'] for l in lineas),
             'hay_faltantes': len(lineas) != len(self.items),
+            'hay_opciones_invalidas': any(l['opciones_invalidas'] for l in lineas),
         }
 
+    def _validar_opciones(self, producto, opcion_ids):
+        """Comprueba que las opciones sean activas y de ese producto y que haya un solo tamaño (HU10)."""
+        ids = set(opcion_ids)
+        validas = {o.id: o for o in producto.options.filter(is_active=True)}
+        if not ids <= validas.keys():
+            raise CarritoError(f'Alguna opción elegida no está disponible para «{producto.name}».')
+        tamanos_elegidos = [i for i in ids if validas[i].kind == ProductOption.SIZE]
+        hay_tamanos = any(o.kind == ProductOption.SIZE for o in validas.values())
+        if len(tamanos_elegidos) > 1:
+            raise CarritoError('Elige un solo tamaño.')
+        if hay_tamanos and not tamanos_elegidos:
+            raise CarritoError(f'Elige un tamaño para «{producto.name}».')
+        return sorted(ids)
 
-    def agregar(self, producto_id, sede_id, cantidad=1):
-        """Agrega un producto. Devuelve True si cambió de sede y el carrito se vació."""
+    def agregar(self, producto_id, sede_id, cantidad=1, opcion_ids=()):
+        """Agrega un producto con sus opciones. Devuelve True si cambió de sede y el carrito se vació."""
         cantidad = validar_cantidad(cantidad)
         sede = Sede.objects.filter(pk=sede_id, is_active=True).first()
         if sede is None:
@@ -99,8 +150,10 @@ class Carrito:
             raise CarritoError('El producto no existe.')
         if not SedeProduct.objects.filter(sede=sede, product=producto, is_available=True).exists():
             raise CarritoError(f'«{producto.name}» no está disponible en la sede {sede.name}.')
+        opcion_ids = self._validar_opciones(producto, opcion_ids)
 
-        nuevo_total = self.items.get(producto.id, 0) + cantidad
+        clave = clave_linea(producto.id, opcion_ids)
+        nuevo_total = self.items.get(clave, 0) + cantidad
         if nuevo_total > CANTIDAD_MAXIMA:
             raise CarritoError(f'La cantidad máxima por producto es {CANTIDAD_MAXIMA}.')
 
@@ -109,19 +162,19 @@ class Carrito:
             cambio_sede = bool(self.items)
             self.items = {}
             self.sede_id = sede.id
-        self.items[producto.id] = nuevo_total
+        self.items[clave] = nuevo_total
         self._guardar()
         return cambio_sede
 
-    def actualizar(self, producto_id, cantidad):
+    def actualizar(self, clave, cantidad):
         cantidad = validar_cantidad(cantidad)
-        if producto_id not in self.items:
+        if clave not in self.items:
             raise CarritoError('Ese producto no está en tu carrito.')
-        self.items[producto_id] = cantidad
+        self.items[clave] = cantidad
         self._guardar()
 
-    def quitar(self, producto_id):
-        self.items.pop(producto_id, None)
+    def quitar(self, clave):
+        self.items.pop(clave, None)
         if not self.items:
             self.sede_id = None
         self._guardar()

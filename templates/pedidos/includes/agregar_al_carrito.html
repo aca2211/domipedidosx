@@ -3,6 +3,44 @@
   {% csrf_token %}
   <input type="hidden" name="product_id" value="{{ p.id }}">
   <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  {% if p.tamanos or p.adiciones or p.exclusiones %}
+  <details class="mb-2">
+    <summary class="small fw-semibold" style="cursor: pointer;"><i class="bi bi-sliders me-1"></i>Personalizar</summary>
+    {% if p.tamanos %}
+      <div class="mt-2">
+        <div class="small fw-semibold">Tamaño</div>
+        {% for o in p.tamanos %}
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="tamano" id="opcion-{{ o.id }}" value="{{ o.id }}" {% if forloop.first %}checked{% endif %}>
+            <label class="form-check-label small" for="opcion-{{ o.id }}">{{ o.name }}{% if o.extra_price %} (+${{ o.extra_price|floatformat:0 }}){% endif %}</label>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if p.adiciones %}
+      <div class="mt-2">
+        <div class="small fw-semibold">Adiciones</div>
+        {% for o in p.adiciones %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="opciones" id="opcion-{{ o.id }}" value="{{ o.id }}">
+            <label class="form-check-label small" for="opcion-{{ o.id }}">{{ o.name }}{% if o.extra_price %} (+${{ o.extra_price|floatformat:0 }}){% endif %}</label>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if p.exclusiones %}
+      <div class="mt-2">
+        <div class="small fw-semibold">Quitar ingredientes</div>
+        {% for o in p.exclusiones %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="opciones" id="opcion-{{ o.id }}" value="{{ o.id }}">
+            <label class="form-check-label small" for="opcion-{{ o.id }}">Sin {{ o.name }}</label>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </details>
+  {% endif %}
   <div class="input-group">
     {% if sede_id %}
       <input type="hidden" name="sede_id" value="{{ sede_id }}">

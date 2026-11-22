@@ -15,6 +15,9 @@
     {% if hay_agotados %}
       <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-1"></i>Algún producto ya no está disponible en esta sede. Quítalo para poder confirmar.</div>
     {% endif %}
+    {% if hay_opciones_invalidas %}
+      <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-1"></i>Alguna opción de tu carrito ya no está disponible. Quita ese producto y vuelve a agregarlo para poder confirmar.</div>
+    {% endif %}
     <div class="row g-4">
       <div class="col-lg-8">
         {% for l in lineas %}
@@ -24,17 +27,19 @@
                 <div>
                   <h5 class="fw-bold mb-1">{{ l.producto.name }}</h5>
                   <small class="text-muted">${{ l.precio|floatformat:0 }} c/u</small>
+                  {% include 'pedidos/includes/opciones.html' with opciones=l.opciones %}
+                  {% if l.opciones_invalidas %}<div><span class="badge bg-warning text-dark">Una opción ya no está disponible</span></div>{% endif %}
                   {% if not l.disponible %}<div><span class="badge bg-warning text-dark">No disponible en esta sede</span></div>{% endif %}
                 </div>
                 <div class="price text-end">${{ l.subtotal|floatformat:0 }}</div>
               </div>
               <div class="d-flex flex-wrap gap-2 mt-3">
-                <form method="post" action="{% url 'carrito_actualizar' l.producto.id %}" class="d-flex gap-2">
+                <form method="post" action="{% url 'carrito_actualizar' l.clave %}" class="d-flex gap-2">
                   {% csrf_token %}
                   <input type="number" name="cantidad" value="{{ l.cantidad }}" min="1" max="50" class="form-control form-control-sm" style="width: 80px;" aria-label="Cantidad de {{ l.producto.name }}">
                   <button class="btn btn-sm btn-outline-domi" type="submit">Actualizar</button>
                 </form>
-                <form method="post" action="{% url 'carrito_quitar' l.producto.id %}">
+                <form method="post" action="{% url 'carrito_quitar' l.clave %}">
                   {% csrf_token %}
                   <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-trash me-1"></i>Quitar</button>
                 </form>
@@ -51,7 +56,7 @@
             <div class="d-flex justify-content-between"><span>Domicilio</span><span>${{ costo_domicilio|floatformat:0 }}</span></div>
             <hr>
             <div class="d-flex justify-content-between fw-bold"><span>Total</span><span class="price">${{ total|floatformat:0 }}</span></div>
-            {% if hay_agotados %}
+            {% if hay_agotados or hay_opciones_invalidas %}
               <button class="btn btn-domi w-100 mt-3" disabled>Confirmar pedido</button>
             {% else %}
               <a href="{% url 'pedido_confirmar' %}" class="btn btn-domi w-100 mt-3">Confirmar pedido</a>
