@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sede, Category, Product, SedeProduct
+from .models import Sede, Category, Product, ProductOption, SedeProduct
 
 
 def es_operador(user):
@@ -64,22 +64,43 @@ class SedeProductInline(admin.TabularInline):
     extra = 1
 
 
+class ProductOptionInline(admin.TabularInline):
+    """Tamaños, adiciones e ingredientes excluibles del producto (HU10)."""
+    model = ProductOption
+    extra = 1
+
+
 @admin.register(Product)
 class ProductAdmin(OperadorAdminMixin, admin.ModelAdmin):
     campo_sede = 'sedes'
     list_display = ('name', 'category', 'price', 'prep_time_minutes')
     list_filter = ('category', 'sedes')
     search_fields = ('name',)
-    inlines = [SedeProductInline]
+    inlines = [SedeProductInline, ProductOptionInline]
 
     def get_inlines(self, request, obj):
         if es_operador(request.user):
-            return []   # el inline mostraría las demás sedes
+            return []   # los inlines mostrarían las demás sedes y las opciones compartidas
         return super().get_inlines(request, obj)
 
     def get_list_filter(self, request):
         if es_operador(request.user):
             return ('category',)
+        return super().get_list_filter(request)
+
+
+@admin.register(ProductOption)
+class ProductOptionAdmin(OperadorAdminMixin, admin.ModelAdmin):
+    """Opciones de producto (HU10). Son del producto y se comparten entre sedes, así que,
+    como el producto, el operador las ve (solo las de productos de su sede) pero no las edita."""
+    campo_sede = 'product__sedes'
+    list_display = ('name', 'kind', 'product', 'extra_price', 'is_active')
+    list_filter = ('kind', 'is_active')
+    search_fields = ('name', 'product__name')
+
+    def get_list_filter(self, request):
+        if es_operador(request.user):
+            return ('kind', 'is_active')
         return super().get_list_filter(request)
 
 

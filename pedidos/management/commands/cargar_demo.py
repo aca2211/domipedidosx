@@ -14,7 +14,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from menu.models import Category, Product, Sede, SedeProduct
+from menu.models import Category, Product, ProductOption, Sede, SedeProduct
 from pedidos.cart import COSTO_DOMICILIO
 from pedidos.models import DetallePedido, Pedido
 from users.models import Direccion
@@ -48,6 +48,22 @@ PRODUCTOS = [
     ('Acompañamientos', 'Aros de Cebolla', 'Aros apanados con salsa BBQ', '9000', 10),
     ('Acompañamientos', 'Ensalada de la Casa', 'Lechuga, tomate, zanahoria y vinagreta', '10000', 8),
 ]
+
+# Opciones de personalización (HU10): nombre del producto -> [(tipo, nombre, recargo)]
+HAMBURGUESA = [
+    ('size', 'Normal', '0'), ('size', 'Grande', '4000'),
+    ('addon', 'Tocineta', '3000'), ('addon', 'Queso extra', '2000'),
+    ('exclusion', 'Cebolla', '0'), ('exclusion', 'Tomate', '0'), ('exclusion', 'Salsa de la casa', '0'),
+]
+BEBIDA = [('size', 'Pequeña', '0'), ('size', 'Grande', '3000')]
+OPCIONES = {
+    'Hamburguesa Clásica': HAMBURGUESA,
+    'Hamburguesa Doble Carne': HAMBURGUESA,
+    'Hamburguesa Pollo Crispy': HAMBURGUESA,
+    'Limonada Natural': BEBIDA,
+    'Malteada de Chocolate': BEBIDA,
+    'Papas Fritas': [('addon', 'Salsa BBQ', '1500'), ('exclusion', 'Sal', '0')],
+}
 
 # Productos agotados en una sede, para mostrar la disponibilidad por sede.
 AGOTADOS = {('Sede Norte', 'Malteada de Chocolate')}
@@ -88,6 +104,11 @@ class Command(BaseCommand):
             help='Borra los pedidos del cliente demo y los vuelve a crear.',
         )
         parser.add_argument(
+            '--ocultar-otros', action='store_true',
+            help='Marca como no disponibles los productos que no son del demo (por ejemplo, '
+                 'datos de prueba anteriores) para que el menú quede limpio. No borra nada.',
+        )
+        parser.add_argument(
             '--force', action='store_true',
             help='Permite correr el comando con DEBUG=False (no lo uses en producción).',
         )
@@ -101,6 +122,8 @@ class Command(BaseCommand):
         with transaction.atomic():
             sedes = self._sedes()
             productos = self._menu(sedes)
+            if options['ocultar_otros']:
+                self._ocultar_otros(productos)
             usuarios = self._usuarios()
             self._direccion(usuarios['cliente'])
             self._pedidos(usuarios, sedes, productos, options['reiniciar_pedidos'])
@@ -139,7 +162,28 @@ class Command(BaseCommand):
                     defaults={'is_available': (nombre_sede, nombre) not in AGOTADOS},
                 )
         self.stdout.write(f'Categorías: {len(categorias)} · Productos: {len(productos)}')
+        self._opciones(productos)
         return productos
+
+    def _opciones(self, productos):
+        total = 0
+        for nombre, opciones in OPCIONES.items():
+            for tipo, nombre_opcion, recargo in opciones:
+                ProductOption.objects.get_or_create(
+                    product=productos[nombre], kind=tipo, name=nombre_opcion,
+                    defaults={'extra_price': Decimal(recargo)},
+                )
+                total += 1
+        self.stdout.write(f'Opciones de producto: {total}')
+
+    def _ocultar_otros(self, productos):
+        """Oculta del menú los productos que no son del demo, sin borrarlos (pueden tener pedidos)."""
+        ocultos = (
+            SedeProduct.objects.filter(is_available=True)
+            .exclude(product__in=productos.values())
+            .update(is_available=False)
+        )
+        self.stdout.write(f'Productos ajenos al demo ocultados del menú: {ocultos}')
 
     # ---------- usuarios ----------
     def _usuarios(self):

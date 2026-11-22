@@ -27,6 +27,12 @@ def _entero(valor):
         return None
 
 
+def _opciones_del_post(post):
+    """Ids de las opciones elegidas: un tamaño (radio «tamano») y varias adiciones/exclusiones («opciones»)."""
+    crudos = [post.get('tamano')] + post.getlist('opciones')
+    return [i for i in (_entero(v) for v in crudos if v) if i is not None]
+
+
 def _destino_seguro(request, defecto):
     destino = request.POST.get('next', '')
     if destino and url_has_allowed_host_and_scheme(destino, allowed_hosts={request.get_host()}):
@@ -60,6 +66,7 @@ def agregar_al_carrito(request):
             _entero(request.POST.get('product_id')),
             _entero(request.POST.get('sede_id')),
             request.POST.get('cantidad', 1),
+            _opciones_del_post(request.POST),
         )
     except CarritoError as e:
         messages.error(request, str(e))
@@ -72,9 +79,9 @@ def agregar_al_carrito(request):
 
 @rol_requerido('cliente')
 @require_POST
-def actualizar_carrito(request, producto_id):
+def actualizar_carrito(request, clave):
     try:
-        Carrito(request).actualizar(producto_id, request.POST.get('cantidad'))
+        Carrito(request).actualizar(clave, request.POST.get('cantidad'))
     except CarritoError as e:
         messages.error(request, str(e))
     return redirect('carrito_ver')
@@ -82,8 +89,8 @@ def actualizar_carrito(request, producto_id):
 
 @rol_requerido('cliente')
 @require_POST
-def quitar_del_carrito(request, producto_id):
-    Carrito(request).quitar(producto_id)
+def quitar_del_carrito(request, clave):
+    Carrito(request).quitar(clave)
     messages.success(request, 'Producto quitado del carrito.')
     return redirect('carrito_ver')
 

@@ -39,7 +39,10 @@
             </div>
             <ul class="list-unstyled my-2">
               {% for d in p.detalles.all %}
-                <li><strong>{{ d.cantidad }}×</strong> {{ d.producto.name }}</li>
+                <li>
+                  <strong>{{ d.cantidad }}×</strong> {{ d.producto.name }}
+                  {% include 'pedidos/includes/opciones.html' with opciones=d.opciones_lista %}
+                </li>
               {% endfor %}
             </ul>
             {% if p.observaciones %}

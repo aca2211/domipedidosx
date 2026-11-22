@@ -53,6 +53,17 @@ class CargarDemoTests(TestCase):
         cargar()
         self.assertEqual(conteos(), primera)
 
+    def test_ocultar_otros_esconde_productos_ajenos_sin_borrarlos(self):
+        cat = Category.objects.create(name='Viejos')
+        viejo = Product.objects.create(category=cat, name='Producto viejo', description='d', price=1000)
+        sede = Sede.objects.create(name='Sede Centro', address='Cra 5 # 12-30, Centro')
+        SedeProduct.objects.create(sede=sede, product=viejo)
+        cargar(ocultar_otros=True)
+        self.assertTrue(Product.objects.filter(pk=viejo.pk).exists())
+        self.assertFalse(SedeProduct.objects.get(product=viejo).is_available)
+        # los productos del demo siguen visibles
+        self.assertEqual(SedeProduct.objects.filter(product__name='Gaseosa', is_available=True).count(), 2)
+
     def test_los_usuarios_entran_con_la_clave_demo(self):
         cargar()
         for username in ('demo_cliente', 'demo_operador', 'demo_cocina', 'demo_admin'):

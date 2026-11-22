@@ -23,6 +23,7 @@
           <h5 class="fw-bold">Tu pedido · {{ sede.name }}</h5>
           {% for l in lineas %}
             <div class="d-flex justify-content-between small py-1"><span>{{ l.cantidad }} × {{ l.producto.name }}</span><span>${{ l.subtotal|floatformat:0 }}</span></div>
+            {% include 'pedidos/includes/opciones.html' with opciones=l.opciones %}
           {% endfor %}
           <hr>
           <div class="d-flex justify-content-between"><span>Subtotal</span><span>${{ subtotal|floatformat:0 }}</span></div>
