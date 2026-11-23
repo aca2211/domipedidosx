@@ -55,6 +55,18 @@
         <div><div class="fw-bold">Usuarios y roles</div><small class="text-muted">Crear y administrar cuentas</small></div>
       </a>
     </div>
+    <div class="col-md-6 col-lg-4">
+      <a class="card card-domi hover role-tile" href="{% url 'buscar_pedidos' %}">
+        <i class="bi bi-search"></i>
+        <div><div class="fw-bold">Buscar pedidos</div><small class="text-muted">Filtrar por fecha, sede y estado</small></div>
+      </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <a class="card card-domi hover role-tile" href="{% url 'buscar_clientes' %}">
+        <i class="bi bi-person-lines-fill"></i>
+        <div><div class="fw-bold">Buscar clientes</div><small class="text-muted">Por nombre, correo o teléfono</small></div>
+      </a>
+    </div>
     {% endif %}
     {% if user.role == 'cocina' %}
     <div class="col-md-6 col-lg-4">

@@ -146,3 +146,16 @@ class BuscarClientesTests(BusquedaBase):
         self.crear_pedido(cliente=self.ana)
         cuenta = {c.username: c.num_pedidos for c in self.client.get(self.url).context['pagina']}
         self.assertEqual(cuenta, {'ana': 2, 'luis': 0})
+
+
+class EnlacesBusquedaTests(BusquedaBase):
+    def test_el_admin_ve_los_enlaces_en_su_panel(self):
+        respuesta = self.client.get(reverse('home'))
+        self.assertContains(respuesta, reverse('buscar_pedidos'))
+        self.assertContains(respuesta, reverse('buscar_clientes'))
+
+    def test_el_cliente_no_ve_los_enlaces(self):
+        self.client.force_login(self.ana)
+        respuesta = self.client.get(reverse('home'))
+        self.assertNotContains(respuesta, reverse('buscar_pedidos'))
+        self.assertNotContains(respuesta, reverse('buscar_clientes'))
