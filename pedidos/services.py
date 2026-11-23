@@ -6,6 +6,7 @@ from menu.models import Feriado, SedeProduct, StockInsuficiente
 
 from .cart import Carrito, CarritoError
 from .models import DetallePedido, HistorialEstado, Pedido
+from .notificaciones import notificar_pedido
 
 
 def _descontar_stock(sede, lineas):
@@ -128,6 +129,7 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
         ])
         _descontar_stock(sede, resumen['lineas'])
         _registrar_estado(pedido, 'recibido')
+        transaction.on_commit(lambda pk=pedido.pk: notificar_pedido(pk, 'confirmado'))
     carrito.vaciar()
     return pedido
 
@@ -162,6 +164,7 @@ def cancelar_pedido(pedido_id, cliente):
         pedido.save(update_fields=['estado', 'updated_at'])
         _devolver_stock(pedido)
         _registrar_estado(pedido, 'cancelado')
+        transaction.on_commit(lambda pk=pedido.pk: notificar_pedido(pk, 'cancelado'))
     return pedido
 
 
@@ -190,4 +193,5 @@ def avanzar_pedido(pedido_id, sede, estado_esperado):
         pedido.estado = pedido.siguiente_estado()
         pedido.save(update_fields=['estado', 'updated_at'])
         _registrar_estado(pedido, pedido.estado)
+        transaction.on_commit(lambda pk=pedido.pk: notificar_pedido(pk, 'estado'))
     return pedido
