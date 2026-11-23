@@ -5,7 +5,7 @@ from django.utils import timezone
 from menu.models import Feriado, SedeProduct, StockInsuficiente
 
 from .cart import Carrito, CarritoError
-from .models import DetallePedido, Pedido
+from .models import DetallePedido, HistorialEstado, Pedido
 
 
 def _descontar_stock(sede, lineas):
@@ -27,6 +27,30 @@ def _devolver_stock(pedido):
         sp = SedeProduct.objects.select_for_update().filter(sede=pedido.sede, product=detalle.producto).first()
         if sp is not None:
             sp.reponer(detalle.cantidad)
+
+
+def _registrar_estado(pedido, estado):
+    """HU43: guarda cuándo el pedido entró al estado indicado."""
+    HistorialEstado.objects.create(pedido=pedido, estado=estado)
+
+
+def tiempos_por_etapa(pedido):
+    """HU43: duración de cada etapa del pedido, en minutos.
+
+    Cada etapa dura desde que el pedido entró a ese estado hasta que entró al siguiente.
+    La última etapa no tiene fin mientras el pedido siga abierto, así que no devuelve minutos.
+    """
+    entradas = list(pedido.historial_estados.order_by('entrada', 'id'))
+    tiempos = []
+    for actual, siguiente in zip(entradas, entradas[1:]):
+        minutos = (siguiente.entrada - actual.entrada).total_seconds() / 60
+        tiempos.append({
+            'estado': actual.estado,
+            'inicio': actual.entrada,
+            'fin': siguiente.entrada,
+            'minutos': round(minutos, 2),
+        })
+    return tiempos
 
 
 def productos_bajo_minimo(sede):
@@ -103,6 +127,7 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
             for l in resumen['lineas']
         ])
         _descontar_stock(sede, resumen['lineas'])
+        _registrar_estado(pedido, 'recibido')
     carrito.vaciar()
     return pedido
 
@@ -136,6 +161,7 @@ def cancelar_pedido(pedido_id, cliente):
         pedido.estado = 'cancelado'
         pedido.save(update_fields=['estado', 'updated_at'])
         _devolver_stock(pedido)
+        _registrar_estado(pedido, 'cancelado')
     return pedido
 
 
@@ -163,4 +189,5 @@ def avanzar_pedido(pedido_id, sede, estado_esperado):
             )
         pedido.estado = pedido.siguiente_estado()
         pedido.save(update_fields=['estado', 'updated_at'])
+        _registrar_estado(pedido, pedido.estado)
     return pedido

@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import models
+from django.utils import timezone
 from django.conf import settings
 
 class Pedido(models.Model):
@@ -56,3 +57,23 @@ class DetallePedido(models.Model):
             {**o, 'con_recargo': Decimal(o.get('extra') or '0') > 0}
             for o in self.opciones
         ]
+
+
+class HistorialEstado(models.Model):
+    """Momento en que un pedido entró a cada estado (HU43).
+
+    Una fila por cada cambio de estado (y una al crear el pedido). Con ellas se mide
+    cuánto tarda cada etapa, que es lo que necesitan HU32, HU34 y HU35.
+    """
+    pedido = models.ForeignKey(Pedido, related_name='historial_estados', on_delete=models.CASCADE)
+    estado = models.CharField('estado', choices=Pedido.ESTADOS, max_length=20)
+    entrada = models.DateTimeField('entrada al estado', default=timezone.now)
+
+    class Meta:
+        verbose_name = 'historial de estado'
+        verbose_name_plural = 'historial de estados'
+        ordering = ['entrada', 'id']
+
+    def __str__(self):
+        return f'Pedido #{self.pedido_id} · {self.get_estado_display()} · {self.entrada:%H:%M:%S}'
+
