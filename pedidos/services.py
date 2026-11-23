@@ -1,10 +1,42 @@
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
 from menu.models import Feriado, SedeProduct, StockInsuficiente
 
 from .cart import Carrito, CarritoError
 from .models import DetallePedido, Pedido
+
+
+def _descontar_stock(sede, lineas):
+    """HU29: descuenta las existencias de cada línea. Si alguna no alcanza, lanza CarritoError
+    y la transacción que llama revierte todo (no queda pedido a medias)."""
+    for linea in sorted(lineas, key=lambda l: l['producto'].id):
+        sp = SedeProduct.objects.select_for_update().filter(sede=sede, product=linea['producto']).first()
+        if sp is None:
+            continue
+        try:
+            sp.descontar(linea['cantidad'])
+        except StockInsuficiente:
+            raise CarritoError(f'No hay existencias suficientes de «{linea["producto"].name}».')
+
+
+def _devolver_stock(pedido):
+    """HU29: al cancelar un pedido se devuelven sus unidades a la existencia de la sede."""
+    for detalle in pedido.detalles.select_related('producto').order_by('producto_id'):
+        sp = SedeProduct.objects.select_for_update().filter(sede=pedido.sede, product=detalle.producto).first()
+        if sp is not None:
+            sp.reponer(detalle.cantidad)
+
+
+def productos_bajo_minimo(sede):
+    """HU30: productos de la sede con existencias en el mínimo o por debajo, los más críticos primero."""
+    return (
+        SedeProduct.objects
+        .filter(sede=sede, stock__isnull=False, stock__lte=F('stock_minimo'))
+        .select_related('product')
+        .order_by('stock', 'product__name')
+    )
 
 
 def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
@@ -70,6 +102,7 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
             )
             for l in resumen['lineas']
         ])
+        _descontar_stock(sede, resumen['lineas'])
     carrito.vaciar()
     return pedido
 
@@ -102,6 +135,7 @@ def cancelar_pedido(pedido_id, cliente):
             )
         pedido.estado = 'cancelado'
         pedido.save(update_fields=['estado', 'updated_at'])
+        _devolver_stock(pedido)
     return pedido
 
 

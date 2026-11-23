@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from menu.models import Product, ProductOption, Sede, SedeProduct
+from .services import productos_bajo_minimo
 
 from .cart import Carrito, CarritoError
 from .forms import PedidoOperadorForm
@@ -117,6 +118,7 @@ def panel_operador(request):
         'sede': sede,
         'sedes': [],
         'pedidos': pedidos,
+        'alertas_stock': productos_bajo_minimo(sede),
     })
 
 

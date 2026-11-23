@@ -58,11 +58,26 @@ class Product(models.Model):
         return self.name
 
 
+class StockInsuficiente(Exception):
+    """Se pidieron más unidades de las que hay en existencias (HU29)."""
+    def __init__(self, sede_product):
+        self.sede_product = sede_product
+        super().__init__(str(sede_product))
+
+
 class SedeProduct(models.Model):
     """Disponibilidad y existencias de un producto en una sede (HU11, HU29, HU30)."""
     sede = models.ForeignKey(Sede, related_name='sede_products', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name='sede_products', on_delete=models.CASCADE)
     is_available = models.BooleanField('disponible', default=True)
+    stock = models.PositiveIntegerField(
+        'existencias', null=True, blank=True,
+        help_text='Unidades en inventario. Vacío = sin control de existencias.',
+    )
+    stock_minimo = models.PositiveIntegerField(
+        'stock mínimo', default=0,
+        help_text='Cuando las existencias llegan a este número, el operador recibe una alerta para reponer.',
+    )
 
     class Meta:
         verbose_name = 'producto por sede'
@@ -73,6 +88,34 @@ class SedeProduct(models.Model):
 
     def __str__(self):
         return f'{self.product} en {self.sede}'
+
+    def save(self, *args, **kwargs):
+        # HU29: sin existencias el producto se bloquea solo, para que el menú y el carrito lo oculten
+        if self.stock == 0:
+            self.is_available = False
+        super().save(*args, **kwargs)
+
+    @property
+    def bajo_minimo(self):
+        """True si hay control de existencias y estamos en el mínimo o por debajo (HU30)."""
+        return self.stock is not None and self.stock <= self.stock_minimo
+
+    def descontar(self, cantidad):
+        if self.stock is None:
+            return
+        if cantidad > self.stock:
+            raise StockInsuficiente(self)
+        self.stock -= cantidad
+        self.save()
+
+    def reponer(self, cantidad):
+        if self.stock is None:
+            return
+        estaba_agotado = self.stock == 0
+        self.stock += cantidad
+        if estaba_agotado and self.stock > 0:
+            self.is_available = True
+        self.save()
 
 
 class ProductOption(models.Model):
