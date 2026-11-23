@@ -1,4 +1,7 @@
 from django.db import transaction
+from django.utils import timezone
+
+from menu.models import Feriado
 
 from .cart import Carrito, CarritoError
 from .models import DetallePedido, Pedido
@@ -20,6 +23,11 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
         sede = carrito.sede
         if sede is None or not sede.is_active:
             raise CarritoError('La sede de tu carrito ya no está disponible.')
+        feriado = Feriado.objects.filter(date=timezone.localdate()).first()
+        if feriado:
+            raise CarritoError(
+                f'La sede {sede.name} no atiende hoy por ser feriado ({feriado.name}).'
+            )
         if not sede.is_open_now():
             raise CarritoError(
                 f'La sede {sede.name} está cerrada en este momento. '

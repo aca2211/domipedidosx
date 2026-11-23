@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sede, Category, Product, ProductOption, SedeProduct
+from .models import Sede, Category, Product, ProductOption, SedeProduct, Feriado, ParametrosGlobales
 
 
 def es_operador(user):
@@ -193,3 +193,23 @@ class SedeProductAdmin(OperadorAdminMixin, admin.ModelAdmin):
 admin.site.site_header = 'DomiPedidosX · Administración'
 admin.site.site_title = 'DomiPedidosX'
 admin.site.index_title = 'Panel de administración'
+
+
+@admin.register(Feriado)
+class FeriadoAdmin(admin.ModelAdmin):
+    """Feriados (HU38). Solo el administrador: el operador no tiene acceso."""
+    list_display = ('date', 'name')
+    search_fields = ('name',)
+    date_hierarchy = 'date'
+
+
+@admin.register(ParametrosGlobales)
+class ParametrosGlobalesAdmin(admin.ModelAdmin):
+    """Parámetros globales (HU38): una sola fila, se edita pero no se agrega de nuevo ni se borra."""
+    list_display = ('__str__', 'margen_entrega_minutos', 'pedido_minimo_global')
+
+    def has_add_permission(self, request):
+        return not ParametrosGlobales.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False

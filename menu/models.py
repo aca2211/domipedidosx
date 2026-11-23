@@ -24,8 +24,14 @@ class Sede(models.Model):
             return self.opening_time <= hora < self.closing_time
         return hora >= self.opening_time or hora < self.closing_time
 
+    def is_open_at_datetime(self, momento):
+        """True si la sede atiende en ese momento: no es feriado y está dentro del horario (HU38)."""
+        if Feriado.es_feriado(momento.date()):
+            return False
+        return self.is_open_at(momento.time())
+
     def is_open_now(self):
-        return self.is_open_at(timezone.localtime().time())
+        return self.is_open_at_datetime(timezone.localtime())
 
 
 class Category(models.Model):
@@ -111,3 +117,54 @@ class ProductOption(models.Model):
         super().clean()
         if self.kind == self.EXCLUSION and self.extra_price:
             raise ValidationError({'extra_price': 'Un ingrediente excluible no puede tener recargo.'})
+
+
+class Feriado(models.Model):
+    """Día festivo en el que ninguna sede recibe pedidos (HU38). Se registra desde el admin."""
+    date = models.DateField('fecha', unique=True)
+    name = models.CharField('nombre', max_length=100)
+
+    class Meta:
+        verbose_name = 'feriado'
+        verbose_name_plural = 'feriados'
+        ordering = ['date']
+
+    def __str__(self):
+        return f'{self.name} ({self.date:%d/%m/%Y})'
+
+    @classmethod
+    def es_feriado(cls, fecha):
+        return cls.objects.filter(date=fecha).exists()
+
+
+class ParametrosGlobales(models.Model):
+    """Configuración global del sistema, una sola fila (HU38).
+
+    Se lee con ParametrosGlobales.cargar(); si no existe, se crea con los valores por defecto.
+    """
+    margen_entrega_minutos = models.PositiveSmallIntegerField(
+        'margen de entrega (min)', default=10,
+        validators=[MaxValueValidator(120)],
+        help_text='Minutos extra que se suman al tiempo estimado de entrega.',
+    )
+    pedido_minimo_global = models.DecimalField(
+        'pedido mínimo global', max_digits=10, decimal_places=2, default=0,
+        validators=[MinValueValidator(0)],
+        help_text='Mínimo de pedido cuando una zona no define uno propio. 0 = sin mínimo.',
+    )
+
+    class Meta:
+        verbose_name = 'parámetros globales'
+        verbose_name_plural = 'parámetros globales'
+
+    def __str__(self):
+        return 'Parámetros globales'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1   # una sola fila
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def cargar(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

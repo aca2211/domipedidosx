@@ -128,3 +128,64 @@ class MenuPublicoTests(TestCase):
             resp = self.client.get(reverse('menu_list'))
             self.assertContains(resp, 'card-img-top')
             self.assertContains(resp, self.jugo.image.url)
+
+
+from datetime import datetime as _datetime
+from decimal import Decimal as _Decimal
+
+from django.db import IntegrityError as _IntegrityError
+from django.test import TestCase as _TestCase
+from django.utils import timezone as _timezone
+
+from menu.models import Feriado as _Feriado, ParametrosGlobales as _Parametros, Sede as _Sede
+
+
+class FeriadoTests(_TestCase):
+    """HU38: la sede no atiende en feriados."""
+
+    def setUp(self):
+        self.sede = _Sede.objects.create(name='Sede Centro', address='Calle 1')
+        self.navidad = _timezone.make_aware(_datetime(2026, 12, 25, 12, 0))
+        self.dia_normal = _timezone.make_aware(_datetime(2026, 12, 26, 12, 0))
+
+    def test_sin_feriado_abre_en_horario(self):
+        self.assertTrue(self.sede.is_open_at_datetime(self.navidad))
+
+    def test_feriado_cierra_la_sede(self):
+        _Feriado.objects.create(date=self.navidad.date(), name='Navidad')
+        self.assertFalse(self.sede.is_open_at_datetime(self.navidad))
+
+    def test_feriado_no_afecta_otros_dias(self):
+        _Feriado.objects.create(date=self.navidad.date(), name='Navidad')
+        self.assertTrue(self.sede.is_open_at_datetime(self.dia_normal))
+
+    def test_dia_normal_fuera_de_horario_sigue_cerrado(self):
+        madrugada = _timezone.make_aware(_datetime(2026, 12, 26, 6, 0))
+        self.assertFalse(self.sede.is_open_at_datetime(madrugada))
+
+    def test_fecha_unica(self):
+        _Feriado.objects.create(date=self.navidad.date(), name='Navidad')
+        with self.assertRaises(_IntegrityError):
+            _Feriado.objects.create(date=self.navidad.date(), name='Otro')
+
+
+class ParametrosGlobalesTests(_TestCase):
+    """HU38: parámetros globales de una sola fila."""
+
+    def test_cargar_crea_con_valores_por_defecto(self):
+        p = _Parametros.cargar()
+        self.assertEqual(p.margen_entrega_minutos, 10)
+        self.assertEqual(p.pedido_minimo_global, _Decimal('0'))
+
+    def test_cargar_devuelve_siempre_la_misma_fila(self):
+        a = _Parametros.cargar()
+        a.margen_entrega_minutos = 25
+        a.save()
+        self.assertEqual(_Parametros.cargar().margen_entrega_minutos, 25)
+        self.assertEqual(_Parametros.objects.count(), 1)
+
+    def test_no_permite_una_segunda_fila(self):
+        _Parametros.cargar()
+        _Parametros(margen_entrega_minutos=5).save()
+        self.assertEqual(_Parametros.objects.count(), 1)
+        self.assertEqual(_Parametros.cargar().margen_entrega_minutos, 5)
