@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Pedido #{{ pedido.pk }} · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <div class="alert alert-success">
+    <i class="bi bi-check-circle me-1"></i>Pedido <strong>#{{ pedido.pk }}</strong> registrado para
+    <strong>{{ pedido.cliente.get_full_name|default:pedido.cliente.username }}</strong>.
+  </div>
+
+  <div class="card card-domi mb-3">
+    <div class="card-body">
+      <div class="row g-2 mb-3">
+        <div class="col-md-4"><small class="text-muted d-block">Sede</small>{{ pedido.sede.name }}</div>
+        <div class="col-md-4"><small class="text-muted d-block">Entrega</small>{{ pedido.get_tipo_entrega_display }}{% if pedido.direccion %} · {{ pedido.direccion.address }}{% endif %}</div>
+        <div class="col-md-4"><small class="text-muted d-block">Pago (simulado)</small>{{ pedido.get_metodo_pago_display }}</div>
+        <div class="col-md-4"><small class="text-muted d-block">Estado</small>{{ pedido.get_estado_display }}</div>
+        {% if pedido.observaciones %}
+          <div class="col-12"><small class="text-muted d-block">Observaciones</small>{{ pedido.observaciones }}</div>
+        {% endif %}
+      </div>
+
+      {% for d in pedido.detalles.all %}
+        <div class="d-flex justify-content-between border-bottom py-2">
+          <div>
+            {{ d.cantidad }} × {{ d.producto.name }}
+            {% include 'pedidos/includes/opciones.html' with opciones=d.opciones_lista %}
+          </div>
+          <span>${{ d.subtotal|floatformat:0 }}</span>
+        </div>
+      {% endfor %}
+
+      <div class="d-flex justify-content-between mt-2"><span>Subtotal</span><span>${{ pedido.subtotal|floatformat:0 }}</span></div>
+      <div class="d-flex justify-content-between"><span>Domicilio</span><span>${{ pedido.costo_domicilio|floatformat:0 }}</span></div>
+      <div class="d-flex justify-content-between fw-bold fs-5"><span>Total</span><span>${{ pedido.total|floatformat:0 }}</span></div>
+    </div>
+  </div>
+
+  <a class="btn btn-domi" href="{% url 'operador_elegir_cliente' %}"><i class="bi bi-telephone-inbound me-1"></i>Tomar otro pedido</a>
+  <a class="btn btn-outline-domi" href="{% url 'operador_panel' %}">Volver al panel</a>
+</div>
+{% endblock %}

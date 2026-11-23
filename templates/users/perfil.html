@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Mi perfil · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <h2 class="fw-bold mb-3"><i class="bi bi-person-gear me-2"></i>Mi perfil</h2>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card card-domi">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3">Datos de contacto</h5>
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2">{{ form.non_field_errors.0 }}</div>
+          {% endif %}
+          <form method="post" data-once>
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Usuario</label>
+              <input class="form-control" value="{{ user.username }}" disabled>
+            </div>
+            {% for field in form %}{% include 'includes/field.html' %}{% endfor %}
+            <button class="btn btn-domi" type="submit"><i class="bi bi-check-lg me-1"></i>Guardar cambios</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card card-domi">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt me-1"></i>Mis direcciones</h5>
+          {% for d in direcciones %}
+            <div class="mb-2">
+              <span class="fw-semibold">{{ d.label }}</span>
+              {% if d.is_default %}<span class="badge badge-domi ms-1">Principal</span>{% endif %}
+              <div class="text-muted small">{{ d.address }}</div>
+            </div>
+          {% empty %}
+            <p class="text-muted">Aún no tienes direcciones guardadas.</p>
+          {% endfor %}
+          <div class="d-flex gap-2 mt-3 flex-wrap">
+            <a class="btn btn-sm btn-domi" href="{% url 'direccion_crear' %}"><i class="bi bi-plus-lg me-1"></i>Nueva</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'direccion_lista' %}">Administrar</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

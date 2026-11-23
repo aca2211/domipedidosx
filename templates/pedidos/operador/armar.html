@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Armar pedido · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <h2 class="fw-bold mb-1"><i class="bi bi-telephone-inbound me-2"></i>Armar pedido</h2>
+  <p class="text-muted">
+    <i class="bi bi-shop me-1"></i>Sede <strong>{{ sede.name }}</strong>
+    · <i class="bi bi-person me-1"></i>Cliente <strong>{{ cliente.get_full_name|default:cliente.username }}</strong>
+    ({{ cliente.phone|default:"sin teléfono" }})
+    · <a href="{% url 'operador_elegir_cliente' %}">cambiar cliente</a>
+  </p>
+
+  <div class="row g-4">
+    {# ---------- Menú de la sede ---------- #}
+    <div class="col-lg-7">
+      {% regroup productos by category.name as grupos %}
+      {% for grupo in grupos %}
+        <h5 class="fw-bold mt-3">{{ grupo.grouper }}</h5>
+        {% for p in grupo.list %}
+        <div class="card card-domi mb-2">
+          <div class="card-body">
+            <div class="d-flex justify-content-between gap-2">
+              <div>
+                <div class="fw-bold">{{ p.name }}</div>
+                <small class="text-muted">{{ p.description }}</small>
+              </div>
+              <span class="price">${{ p.price|floatformat:0 }}</span>
+            </div>
+            <form method="post" action="{% url 'operador_agregar' %}" class="mt-2">
+              {% csrf_token %}
+              <input type="hidden" name="product_id" value="{{ p.id }}">
+              {% if p.tamanos or p.adiciones or p.exclusiones %}
+              <details class="mb-2">
+                <summary class="small fw-semibold" style="cursor: pointer;"><i class="bi bi-sliders me-1"></i>Personalizar</summary>
+                {% if p.tamanos %}
+                  <div class="mt-2">
+                    <div class="small fw-semibold">Tamaño</div>
+                    {% for o in p.tamanos %}
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="tamano" id="opcion-{{ o.id }}" value="{{ o.id }}" {% if forloop.first %}checked{% endif %}>
+                        <label class="form-check-label small" for="opcion-{{ o.id }}">{{ o.name }}{% if o.extra_price %} (+${{ o.extra_price|floatformat:0 }}){% endif %}</label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% if p.adiciones %}
+                  <div class="mt-2">
+                    <div class="small fw-semibold">Adiciones</div>
+                    {% for o in p.adiciones %}
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="opciones" id="opcion-{{ o.id }}" value="{{ o.id }}">
+                        <label class="form-check-label small" for="opcion-{{ o.id }}">{{ o.name }}{% if o.extra_price %} (+${{ o.extra_price|floatformat:0 }}){% endif %}</label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% if p.exclusiones %}
+                  <div class="mt-2">
+                    <div class="small fw-semibold">Quitar ingredientes</div>
+                    {% for o in p.exclusiones %}
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="opciones" id="opcion-{{ o.id }}" value="{{ o.id }}">
+                        <label class="form-check-label small" for="opcion-{{ o.id }}">Sin {{ o.name }}</label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </details>
+              {% endif %}
+              <div class="input-group input-group-sm">
+                <input type="number" name="cantidad" value="1" min="1" max="50" class="form-control" style="max-width: 80px;" aria-label="Cantidad">
+                <button class="btn btn-domi" type="submit"><i class="bi bi-cart-plus me-1"></i>Agregar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      {% empty %}
+        <p class="text-muted">Esta sede no tiene productos disponibles.</p>
+      {% endfor %}
+    </div>
+
+    {# ---------- Resumen del pedido ---------- #}
+    <div class="col-lg-5">
+      <div class="card card-domi">
+        <div class="card-body">
+          <h5 class="fw-bold mb-3"><i class="bi bi-receipt me-2"></i>Pedido en curso</h5>
+
+          {% if hay_agotados or hay_faltantes or hay_opciones_invalidas %}
+            <div class="alert alert-warning small">Hay productos que ya no están disponibles. Quítalos antes de confirmar.</div>
+          {% endif %}
+
+          {% for l in lineas %}
+            <div class="border-bottom pb-2 mb-2">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <strong>{{ l.producto.name }}</strong>
+                  {% if not l.disponible %}<span class="badge bg-danger ms-1">No disponible</span>{% endif %}
+                  {% include 'pedidos/includes/opciones.html' with opciones=l.opciones %}
+                </div>
+                <span>${{ l.subtotal|floatformat:0 }}</span>
+              </div>
+              <div class="d-flex gap-2 mt-1">
+                <form method="post" action="{% url 'operador_actualizar' l.clave %}" class="input-group input-group-sm" style="max-width: 150px;">
+                  {% csrf_token %}
+                  <input type="number" name="cantidad" value="{{ l.cantidad }}" min="1" max="50" class="form-control" aria-label="Cantidad">
+                  <button class="btn btn-outline-domi" type="submit">OK</button>
+                </form>
+                <form method="post" action="{% url 'operador_quitar' l.clave %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-muted">Aún no has agregado productos.</p>
+          {% endfor %}
+
+          {% if lineas %}
+            <div class="d-flex justify-content-between"><span>Subtotal</span><span>${{ subtotal|floatformat:0 }}</span></div>
+            <div class="d-flex justify-content-between"><span>Domicilio</span><span>${{ costo_domicilio|floatformat:0 }}</span></div>
+            <div class="d-flex justify-content-between fw-bold fs-5 mb-3"><span>Total</span><span>${{ total|floatformat:0 }}</span></div>
+
+            <form method="post" action="{% url 'operador_confirmar' %}">
+              {% csrf_token %}
+              {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+              {% include 'includes/field.html' with field=form.tipo_entrega %}
+              {% include 'includes/field.html' with field=form.direccion %}
+              {% if not tiene_direcciones %}
+                <p class="small text-muted">Este cliente no tiene direcciones guardadas: solo puedes registrar el pedido para mostrador.</p>
+              {% endif %}
+              {% include 'includes/field.html' with field=form.metodo_pago %}
+              {% include 'includes/field.html' with field=form.observaciones %}
+              <button class="btn btn-domi w-100" type="submit"><i class="bi bi-check2-circle me-1"></i>Confirmar pedido</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Tablero de cocina · DomiPedidosX{% endblock %}
+{% block content %}
+<div class="fade-in">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-fire text-danger me-2"></i>Tablero de cocina</h2>
+      {% if sede %}<p class="text-muted mb-0">Sede: {{ sede.name }}</p>{% endif %}
+    </div>
+    {% if sede %}
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'tablero_cocina' %}?sede={{ sede.pk }}">
+        <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+      </a>
+    {% endif %}
+  </div>
+
+  {% if not sede %}
+    <div class="card card-domi p-4">
+      <h5 class="fw-bold">¿De qué sede quieres ver los pedidos?</h5>
+      {% for s in sedes %}
+        <a class="btn btn-outline-danger mt-2 text-start" href="{% url 'tablero_cocina' %}?sede={{ s.pk }}">
+          <i class="bi bi-shop me-2"></i>{{ s.name }}
+        </a>
+      {% empty %}
+        <p class="text-muted mb-0">No hay sedes activas.</p>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="row g-3">
+      {% for col in columnas %}
+      <div class="col-lg-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="fw-bold mb-0">{{ col.titulo }}</h5>
+          <span class="badge badge-domi rounded-pill">{{ col.pedidos|length }}</span>
+        </div>
+
+        {% for p in col.pedidos %}
+        <div class="card card-domi mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <strong>Pedido #{{ p.id }}</strong>
+              <small class="text-muted">{{ p.created_at|time:"H:i" }}</small>
+            </div>
+            <ul class="list-unstyled my-2">
+              {% for d in p.detalles.all %}
+                <li><strong>{{ d.cantidad }}×</strong> {{ d.producto.name }}</li>
+              {% endfor %}
+            </ul>
+            {% if p.observaciones %}
+              <div class="small text-muted mb-2"><i class="bi bi-chat-left-text me-1"></i>{{ p.observaciones }}</div>
+            {% endif %}
+            <form method="post" action="{% url 'avanzar_estado' p.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="sede" value="{{ sede.pk }}">
+              <input type="hidden" name="estado_actual" value="{{ p.estado }}">
+              <button type="submit" class="btn btn-sm btn-domi w-100">{{ col.accion }}</button>
+            </form>
+          </div>
+        </div>
+        {% empty %}
+          <div class="text-muted small text-center py-4 border rounded-3 bg-white">Sin pedidos</div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
