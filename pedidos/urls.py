@@ -3,6 +3,8 @@ from django.urls import path
 from . import views, views_cocina, views_operador, views_repetir
 
 
+from .views_historial_sede import historial_sede
+
 urlpatterns = [
     path('carrito/', views.ver_carrito, name='carrito_ver'),
     path('carrito/agregar/', views.agregar_al_carrito, name='carrito_agregar'),
@@ -16,6 +18,7 @@ urlpatterns = [
     path('cocina/tablero/', views_cocina.tablero_cocina, name='cocina_tablero'),
     path('cocina/pedido/<int:pk>/avanzar/', views_cocina.avanzar_estado, name='cocina_avanzar'),
     path('operador/panel/', views_operador.panel_operador, name='operador_panel'),
+    path('operador/historial/', historial_sede, name='operador_historial'),
     path('operador/pedido/nuevo/', views_operador.elegir_cliente, name='operador_elegir_cliente'),
     path('operador/pedido/cliente/', views_operador.seleccionar_cliente, name='operador_seleccionar_cliente'),
     path('operador/pedido/armar/', views_operador.armar_pedido, name='operador_armar_pedido'),
