@@ -20,6 +20,11 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
         sede = carrito.sede
         if sede is None or not sede.is_active:
             raise CarritoError('La sede de tu carrito ya no está disponible.')
+        if not sede.is_open_now():
+            raise CarritoError(
+                f'La sede {sede.name} está cerrada en este momento. '
+                f'Atiende de {sede.opening_time:%H:%M} a {sede.closing_time:%H:%M}.'
+            )
         resumen = carrito.resumen()
         if resumen['hay_faltantes']:
             raise CarritoError('Algún producto de tu carrito ya no existe. Revisa el carrito.')

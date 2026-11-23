@@ -157,3 +157,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Remitente de los correos del sistema (HU03). El envío usa MAILERS (consola en desarrollo).
 DEFAULT_FROM_EMAIL = 'DomiPedidosX <no-responder@domipedidosx.local>'
+
+# Pruebas independientes de la hora real: las sedes están abiertas salvo que la prueba diga lo contrario (HU47)
+TEST_RUNNER = 'domipedidos.test_runner.RunnerConSedesAbiertas'
