@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_cocina, views_operador
+from . import views, views_cocina, views_operador, views_repetir
 
 
 urlpatterns = [
@@ -11,6 +11,7 @@ urlpatterns = [
     path('mis-pedidos/', views.mis_pedidos, name='mis_pedidos'),
     path('pedido/confirmar/', views.confirmar_pedido, name='pedido_confirmar'),
     path('pedido/<int:pk>/cancelar/', views.cancelar_mi_pedido, name='pedido_cancelar'),
+    path('pedido/<int:pk>/repetir/', views_repetir.repetir_mi_pedido, name='pedido_repetir'),
     path('pedido/<int:pk>/creado/', views.pedido_creado, name='pedido_creado'),
     path('cocina/tablero/', views_cocina.tablero_cocina, name='cocina_tablero'),
     path('cocina/pedido/<int:pk>/avanzar/', views_cocina.avanzar_estado, name='cocina_avanzar'),
