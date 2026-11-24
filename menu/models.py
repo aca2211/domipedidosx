@@ -210,3 +210,60 @@ class ParametrosGlobales(models.Model):
     def cargar(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+# ---------------------------------------------------------------------------
+# HU26: Tope de pedidos por sede y franja horaria
+# ---------------------------------------------------------------------------
+
+class TopeCapacidad(models.Model):
+    """Límite de pedidos que acepta la cocina de una sede en una franja del día (HU26).
+
+    La verificación usa `vigente()` justo antes de crear el pedido, dentro de
+    la misma transacción atómica, para que dos pedidos concurrentes no puedan
+    superar el tope al mismo tiempo.
+    """
+    sede = models.ForeignKey(
+        Sede, related_name='topes', on_delete=models.CASCADE,
+    )
+    hora_inicio = models.TimeField('hora de inicio')
+    hora_fin    = models.TimeField('hora de fin')
+    max_pedidos = models.PositiveSmallIntegerField(
+        'máximo de pedidos',
+        validators=[MinValueValidator(1)],
+        help_text='Pedidos activos que acepta la cocina en la franja. Los pedidos cancelados no cuentan.',
+    )
+    is_active = models.BooleanField('activo', default=True)
+
+    class Meta:
+        verbose_name = 'tope de capacidad'
+        verbose_name_plural = 'topes de capacidad'
+        ordering = ['sede', 'hora_inicio']
+
+    def __str__(self):
+        return f'{self.sede}: {self.hora_inicio:%H:%M}–{self.hora_fin:%H:%M} (máx. {self.max_pedidos})'
+
+    def clean(self):
+        super().clean()
+        if not (self.hora_inicio and self.hora_fin):
+            return
+        if self.hora_inicio >= self.hora_fin:
+            raise ValidationError({'hora_fin': 'La hora de fin debe ser posterior a la de inicio.'})
+        if self.is_active and self.sede_id:
+            solapados = TopeCapacidad.objects.filter(
+                sede_id=self.sede_id,
+                is_active=True,
+                hora_inicio__lt=self.hora_fin,
+                hora_fin__gt=self.hora_inicio,
+            ).exclude(pk=self.pk)
+            if solapados.exists():
+                raise ValidationError('Esta franja se cruza con otra franja activa de la misma sede.')
+
+    @classmethod
+    def vigente(cls, sede, hora):
+        """Tope activo de la sede para esa hora, o None si no hay tope configurado."""
+        return cls.objects.filter(
+            sede=sede,
+            is_active=True,
+            hora_inicio__lte=hora,
+            hora_fin__gt=hora,
+        ).first()

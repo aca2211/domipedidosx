@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from menu.models import Feriado, SedeProduct, StockInsuficiente
 
+from .capacidad import verificar_cupo
 from .cart import Carrito, CarritoError
 from .models import DetallePedido, HistorialEstado, Pedido
 from .notificaciones import notificar_pedido
@@ -77,7 +78,9 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
         raise CarritoError('Elige una dirección de entrega.')
 
     with transaction.atomic():
-        sede = carrito.sede
+        # select_for_update garantiza que dos pedidos simultáneos no superen el tope (HU26)
+        from menu.models import Sede as _Sede
+        sede = _Sede.objects.select_for_update().filter(pk=carrito.sede_id).first()
         if sede is None or not sede.is_active:
             raise CarritoError('La sede de tu carrito ya no está disponible.')
         feriado = Feriado.objects.filter(date=timezone.localdate()).first()
@@ -98,6 +101,7 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
             raise CarritoError('Ya no hay disponibilidad de: ' + ', '.join(agotados) + '.')
         if resumen['hay_opciones_invalidas']:
             raise CarritoError('Alguna opción de tu carrito ya no está disponible. Quita ese producto y vuelve a agregarlo.')
+        verificar_cupo(sede)   # HU26: rechaza si la franja está llena
 
         pedido = Pedido.objects.create(
             cliente=cliente,

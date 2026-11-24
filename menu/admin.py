@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sede, Category, Product, ProductOption, SedeProduct, Feriado, ParametrosGlobales
+from .models import Sede, Category, Product, ProductOption, SedeProduct, Feriado, ParametrosGlobales, TopeCapacidad
 
 
 def es_operador(user):
@@ -213,3 +213,12 @@ class ParametrosGlobalesAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(TopeCapacidad)
+class TopeCapacidadAdmin(admin.ModelAdmin):
+    """Topes de pedidos por sede y franja horaria (HU26). Solo el administrador."""
+    list_display  = ('sede', 'hora_inicio', 'hora_fin', 'max_pedidos', 'is_active')
+    list_filter   = ('sede', 'is_active')
+    list_editable = ('is_active',)
+    ordering      = ('sede', 'hora_inicio')
