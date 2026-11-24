@@ -21,6 +21,31 @@
       · <a href="?cambiar_sede=1">cambiar</a>
     </p>
 
+    {% if capacidad %}
+      {% if capacidad.lleno %}
+        <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+          <i class="bi bi-exclamation-octagon-fill fs-5"></i>
+          <div>
+            <strong>Cocina al límite.</strong>
+            Se alcanzó el tope de {{ capacidad.tope.max_pedidos }} pedidos
+            en la franja {{ capacidad.tope.hora_inicio|time:"H:i" }}–{{ capacidad.tope.hora_fin|time:"H:i" }}.
+            No se aceptan más pedidos hasta que termine la franja.
+          </div>
+        </div>
+      {% elif capacidad.cerca_del_limite %}
+        <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+          <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+          <div>
+            <strong>La cocina se acerca al límite.</strong>
+            Van {{ capacidad.ocupados }} de {{ capacidad.tope.max_pedidos }} pedidos
+            ({{ capacidad.porcentaje }} %) en la franja
+            {{ capacidad.tope.hora_inicio|time:"H:i" }}–{{ capacidad.tope.hora_fin|time:"H:i" }};
+            quedan {{ capacidad.cupos }}.
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+
     <div class="row g-3 mb-4">
       <div class="col-md-6 col-lg-3">
         <a class="card card-domi hover role-tile" href="{% url 'operador_elegir_cliente' %}">
@@ -114,4 +139,9 @@
     </div>
   {% endif %}
 </div>
+{% if capacidad %}
+<script>
+  setTimeout(function () { window.location.reload(); }, 30000);
+</script>
+{% endif %}
 {% endblock %}

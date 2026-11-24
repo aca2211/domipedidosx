@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from menu.models import Product, ProductOption, Sede, SedeProduct
 from .services import productos_bajo_minimo
 
+from .capacidad import estado_capacidad
 from .cart import Carrito, CarritoError
 from .forms import PedidoOperadorForm
 from .models import Pedido
@@ -119,6 +120,7 @@ def panel_operador(request):
         'sedes': [],
         'pedidos': pedidos,
         'alertas_stock': productos_bajo_minimo(sede),
+        'capacidad': estado_capacidad(sede),  # HU28
     })
 
 

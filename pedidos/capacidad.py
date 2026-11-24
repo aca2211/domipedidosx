@@ -45,6 +45,48 @@ def _tiene_cupo(sede, momento):
     return contar_pedidos_en_franja(tope, momento.date()) < tope.max_pedidos
 
 
+
+# ---------------------------------------------------------------------------
+# HU28: estado actual de ocupación de la cocina
+# ---------------------------------------------------------------------------
+
+class EstadoCapacidad:
+    """Ocupación actual de la sede en su franja vigente (HU28)."""
+
+    def __init__(self, tope, ocupados):
+        self.tope = tope
+        self.ocupados = ocupados
+
+    @property
+    def porcentaje(self):
+        return round(self.ocupados * 100 / self.tope.max_pedidos)
+
+    @property
+    def cupos(self):
+        return max(0, self.tope.max_pedidos - self.ocupados)
+
+    @property
+    def lleno(self):
+        return self.ocupados >= self.tope.max_pedidos
+
+    @property
+    def cerca_del_limite(self):
+        """True si llegó al umbral de alerta pero aún quedan cupos."""
+        return (
+            not self.lleno
+            and self.ocupados * 100 >= self.tope.umbral_alerta * self.tope.max_pedidos
+        )
+
+
+def estado_capacidad(sede, momento=None):
+    """EstadoCapacidad de la sede en su franja actual, o None si no hay tope."""
+    momento = momento or timezone.localtime()
+    tope = TopeCapacidad.vigente(sede, momento.time())
+    if tope is None:
+        return None
+    return EstadoCapacidad(tope=tope, ocupados=contar_pedidos_en_franja(tope, momento.date()))
+
+
 # ---------------------------------------------------------------------------
 # HU27: buscar alternativas cuando la franja está llena
 # ---------------------------------------------------------------------------

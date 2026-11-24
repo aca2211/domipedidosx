@@ -232,6 +232,11 @@ class TopeCapacidad(models.Model):
         validators=[MinValueValidator(1)],
         help_text='Pedidos activos que acepta la cocina en la franja. Los pedidos cancelados no cuentan.',
     )
+    umbral_alerta = models.PositiveSmallIntegerField(
+        'umbral de alerta (%)', default=80,
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        help_text='Al alcanzar este porcentaje del tope se muestra la alerta al operador.',
+    )
     is_active = models.BooleanField('activo', default=True)
 
     class Meta:
