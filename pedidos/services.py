@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
@@ -6,6 +8,7 @@ from menu.models import Feriado, SedeProduct, StockInsuficiente
 
 from .capacidad import verificar_cupo
 from .cart import Carrito, CarritoError
+from .cobertura import verificar_cobertura
 from .models import DetallePedido, HistorialEstado, Pedido
 from .notificaciones import notificar_pedido
 
@@ -101,6 +104,10 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
             raise CarritoError('Ya no hay disponibilidad de: ' + ', '.join(agotados) + '.')
         if resumen['hay_opciones_invalidas']:
             raise CarritoError('Alguna opción de tu carrito ya no está disponible. Quita ese producto y vuelve a agregarlo.')
+        # HU24 + HU25: la dirección debe tener cobertura y el subtotal alcanzar el mínimo de su zona
+        costo_domicilio = Decimal('0')
+        if tipo_entrega == 'domicilio':
+            costo_domicilio = verificar_cobertura(sede, direccion, resumen['subtotal'])
         producto_ids = [l['producto'].pk for l in resumen['lineas']]
         verificar_cupo(sede, producto_ids)  # HU26 + HU27: rechaza si llena, sugiere alternativas
 
@@ -113,8 +120,8 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
             metodo_pago=metodo_pago,
             observaciones=observaciones,
             subtotal=resumen['subtotal'],
-            costo_domicilio=resumen['costo_domicilio'],
-            total=resumen['total'],
+            costo_domicilio=costo_domicilio,
+            total=resumen['subtotal'] + costo_domicilio,
             estado='recibido',
         )
         DetallePedido.objects.bulk_create([

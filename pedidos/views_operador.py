@@ -11,6 +11,7 @@ from .services import productos_bajo_minimo
 
 from .capacidad import estado_capacidad
 from .cart import Carrito, CarritoError
+from .cobertura import evaluar_direcciones
 from .forms import PedidoOperadorForm
 from .models import Pedido
 from .permissions import rol_requerido
@@ -159,7 +160,15 @@ def _productos_de_la_sede(sede):
 
 
 def _render_armar(request, sede, cliente, carrito, form):
+    # HU24: el domicilio se cobra según la zona de la dirección elegida (solo si la entrega es a domicilio)
+    direcciones = list(cliente.direcciones.all())
+    costos = evaluar_direcciones(sede, direcciones, carrito.resumen()['subtotal'])
+    elegida = next((d for d in direcciones if str(d.pk) == str(form['direccion'].value())), None)
+    if form['tipo_entrega'].value() == 'mostrador':
+        elegida = None
     contexto = {
+        'costos_direccion': costos,
+        'aviso_cobertura': costos['direcciones'][str(elegida.pk)]['aviso'] if elegida else None,
         'sede': sede,
         'cliente': cliente,
         'productos': _productos_de_la_sede(sede),
@@ -167,7 +176,7 @@ def _render_armar(request, sede, cliente, carrito, form):
         'form': form,
         'tiene_direcciones': cliente.direcciones.exists(),
     }
-    contexto.update(carrito.resumen())
+    contexto.update(carrito.resumen(direccion=elegida))
     return render(request, 'pedidos/operador/armar.html', contexto)
 
 

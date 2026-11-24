@@ -1,7 +1,7 @@
 """Carrito de compras guardado en la sesión (HU13). No usa modelos propios."""
 from decimal import Decimal
 
-from menu.models import Product, ProductOption, Sede, SedeProduct
+from menu.models import Product, ProductOption, Sede, SedeProduct, ZonaCobertura
 
 SESSION_KEY = 'carrito'
 COSTO_DOMICILIO = Decimal('0') 
@@ -79,8 +79,18 @@ class Carrito:
     def sede(self):
         return Sede.objects.filter(pk=self.sede_id).first() if self.sede_id else None
 
-    def resumen(self):
-        """Líneas con precio actual (base + recargos de opciones), disponibilidad en la sede y totales."""
+    def _costo_domicilio(self, direccion):
+        """Tarifa de la zona que cubre la dirección (HU24); sin zona o sin dirección, el costo por defecto."""
+        if direccion is None:
+            return COSTO_DOMICILIO
+        zona = ZonaCobertura.para_direccion(self.sede, direccion)
+        return zona.tarifa_domicilio if zona else COSTO_DOMICILIO
+
+    def resumen(self, direccion=None):
+        """Líneas con precio actual (base + recargos de opciones), disponibilidad en la sede y totales.
+
+        Con `direccion` el domicilio se cobra según su zona (HU24); sin ella, no se puede saber.
+        """
         partes = {clave: separar_clave(clave) for clave in self.items}
         ids = {p[0] for p in partes.values() if p}
         opcion_ids = {i for p in partes.values() if p for i in p[1]}
@@ -115,11 +125,14 @@ class Carrito:
             })
         lineas.sort(key=lambda l: (l['producto'].name, l['clave']))
         subtotal = sum((l['subtotal'] for l in lineas), Decimal('0'))
+        costo_domicilio = self._costo_domicilio(direccion)
         return {
             'lineas': lineas,
             'subtotal': subtotal,
-            'costo_domicilio': COSTO_DOMICILIO,
-            'total': subtotal + COSTO_DOMICILIO,
+            'costo_domicilio': costo_domicilio,
+            'total': subtotal + costo_domicilio,
+            # True si el domicilio depende de la zona: en el carrito aún no se conoce la dirección
+            'domicilio_por_zona': ZonaCobertura.tiene_zonas(self.sede),
             'hay_agotados': any(not l['disponible'] for l in lineas),
             'hay_faltantes': len(lineas) != len(self.items),
             'hay_opciones_invalidas': any(l['opciones_invalidas'] for l in lineas),

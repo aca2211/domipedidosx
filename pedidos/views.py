@@ -7,6 +7,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .cart import Carrito, CarritoError
+from .cobertura import evaluar_direcciones
 from .forms import ConfirmarPedidoForm
 from .models import Pedido
 from .permissions import rol_requerido
@@ -125,8 +126,15 @@ def confirmar_pedido(request):
     else:
         form = ConfirmarPedidoForm(user=request.user)
 
-    contexto = {'form': form, 'carrito': carrito, 'sede': carrito.sede}
-    contexto.update(carrito.resumen())
+    # HU24: el domicilio se cobra según la zona de la dirección elegida (por defecto, la que se ve seleccionada)
+    direcciones = list(request.user.direcciones.all())
+    costos = evaluar_direcciones(carrito.sede, direcciones, carrito.resumen()['subtotal'])
+    elegida = next((d for d in direcciones if str(d.pk) == str(form['direccion'].value())), direcciones[0])
+    contexto = {
+        'form': form, 'carrito': carrito, 'sede': carrito.sede,
+        'costos_direccion': costos, 'aviso_cobertura': costos['direcciones'][str(elegida.pk)]['aviso'],
+    }
+    contexto.update(carrito.resumen(direccion=elegida))
     return render(request, 'pedidos/confirmar.html', contexto)
 
 
