@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sede, Category, Product, ProductOption, SedeProduct, Feriado, ParametrosGlobales, TopeCapacidad
+from .models import Sede, Category, Product, ProductOption, SedeProduct, Feriado, ParametrosGlobales, TopeCapacidad, ZonaCobertura
 
 
 def es_operador(user):
@@ -222,3 +222,13 @@ class TopeCapacidadAdmin(admin.ModelAdmin):
     list_filter   = ('sede', 'is_active')
     list_editable = ('is_active',)
     ordering      = ('sede', 'hora_inicio')
+
+
+@admin.register(ZonaCobertura)
+class ZonaCoberturaAdmin(admin.ModelAdmin):
+    """Zonas de cobertura con tarifa, tiempo y pedido mínimo (HU24). Solo el administrador."""
+    list_display  = ('sede', 'nombre', 'tarifa_domicilio', 'tiempo_estimado_min', 'pedido_minimo', 'is_active')
+    list_filter   = ('sede', 'is_active')
+    list_editable = ('is_active',)
+    search_fields = ('nombre', 'barrios')
+    ordering      = ('sede', 'nombre')
