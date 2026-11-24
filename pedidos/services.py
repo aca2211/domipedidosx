@@ -101,7 +101,8 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
             raise CarritoError('Ya no hay disponibilidad de: ' + ', '.join(agotados) + '.')
         if resumen['hay_opciones_invalidas']:
             raise CarritoError('Alguna opción de tu carrito ya no está disponible. Quita ese producto y vuelve a agregarlo.')
-        verificar_cupo(sede)   # HU26: rechaza si la franja está llena
+        producto_ids = [l['producto'].pk for l in resumen['lineas']]
+        verificar_cupo(sede, producto_ids)  # HU26 + HU27: rechaza si llena, sugiere alternativas
 
         pedido = Pedido.objects.create(
             cliente=cliente,
