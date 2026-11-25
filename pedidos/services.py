@@ -11,6 +11,7 @@ from .cart import Carrito, CarritoError
 from .cobertura import verificar_cobertura
 from .models import DetallePedido, HistorialEstado, Pedido
 from .notificaciones import notificar_pedido
+from django.contrib.auth import get_user_model
 
 
 def _descontar_stock(sede, lineas):
@@ -198,6 +199,10 @@ def avanzar_pedido(pedido_id, sede, estado_esperado):
             raise AvanceError(
                 f'El pedido #{pedido.pk} está {pedido.get_estado_display().lower()} y no se puede modificar.'
             )
+        if pedido.estado == 'listo' and pedido.tipo_entrega == 'domicilio':
+            raise AvanceError(
+                f'El pedido #{pedido.pk} es a domicilio; el operador debe asignarle un repartidor.'
+            )
         if pedido.estado != estado_esperado:
             raise AvanceError(
                 f'El pedido #{pedido.pk} ya cambió de estado. Revisa el tablero actualizado.'
@@ -205,5 +210,34 @@ def avanzar_pedido(pedido_id, sede, estado_esperado):
         pedido.estado = pedido.siguiente_estado()
         pedido.save(update_fields=['estado', 'updated_at'])
         _registrar_estado(pedido, pedido.estado)
+        transaction.on_commit(lambda pk=pedido.pk: notificar_pedido(pk, 'estado'))
+    return pedido
+
+
+class AsignacionError(Exception):
+    """No se pudo asignar el repartidor al pedido (HU22)."""
+
+
+def asignar_repartidor(pedido_id, sede, repartidor_id):
+    """El operador asigna un repartidor a un pedido listo a domicilio (HU22)."""
+    User = get_user_model()
+    with transaction.atomic():
+        pedido = Pedido.objects.select_for_update().get(pk=pedido_id, sede=sede)
+        if pedido.tipo_entrega != 'domicilio':
+            raise AsignacionError('Solo los pedidos a domicilio requieren repartidor.')
+        if pedido.estado != 'listo':
+            raise AsignacionError(
+                f'El pedido #{pedido.pk} debe estar en estado «Listo» para asignar repartidor.'
+            )
+        repartidor = User.objects.filter(pk=repartidor_id, role='repartidor', is_active=True).first()
+        if repartidor is None:
+            raise AsignacionError('Selecciona un repartidor activo válido.')
+        if repartidor.sede_id and repartidor.sede_id != sede.id:
+            raise AsignacionError('Ese repartidor pertenece a otra sede.')
+
+        pedido.repartidor = repartidor
+        pedido.estado = 'en_camino'
+        pedido.save(update_fields=['repartidor', 'estado', 'updated_at'])
+        _registrar_estado(pedido, 'en_camino')
         transaction.on_commit(lambda pk=pedido.pk: notificar_pedido(pk, 'estado'))
     return pedido

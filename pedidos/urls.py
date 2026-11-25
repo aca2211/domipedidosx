@@ -19,6 +19,7 @@ urlpatterns = [
     path('cocina/tablero/', views_cocina.tablero_cocina, name='cocina_tablero'),
     path('cocina/pedido/<int:pk>/avanzar/', views_cocina.avanzar_estado, name='cocina_avanzar'),
     path('operador/panel/', views_operador.panel_operador, name='operador_panel'),
+    path('operador/pedido/<int:pk>/asignar/', views_operador.asignar_repartidor_pedido, name='operador_asignar_repartidor'),
     path('operador/historial/', historial_sede, name='operador_historial'),
     path('gestion/pedidos/', buscar_pedidos, name='buscar_pedidos'),
     path('gestion/clientes/', buscar_clientes, name='buscar_clientes'),

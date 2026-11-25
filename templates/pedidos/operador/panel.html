@@ -115,6 +115,7 @@
                 <th>Pedido</th>
                 <th>Cliente</th>
                 <th>Estado</th>
+                <th>Repartidor</th>
                 <th class="text-end">Total</th>
               </tr>
             </thead>
@@ -125,12 +126,32 @@
                 <td>#{{ p.pk }}</td>
                 <td>{{ p.cliente.get_full_name|default:p.cliente.username }}</td>
                 <td>
-                  <span class="badge {% if p.estado == 'entregado' %}bg-success{% elif p.estado == 'cancelado' %}bg-danger{% elif p.estado == 'listo' %}bg-info text-dark{% elif p.estado == 'en_preparacion' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ p.get_estado_display }}</span>
+                  <span class="badge {% if p.estado == 'entregado' %}bg-success{% elif p.estado == 'cancelado' %}bg-danger{% elif p.estado == 'en_camino' %}bg-primary{% elif p.estado == 'listo' %}bg-info text-dark{% elif p.estado == 'en_preparacion' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ p.get_estado_display }}</span>
+                </td>
+                <td>
+                  {% if p.tipo_entrega == 'mostrador' %}
+                    <span class="text-muted small">Mostrador</span>
+                  {% elif p.repartidor %}
+                    <span class="small fw-semibold"><i class="bi bi-bicycle me-1"></i>{{ p.repartidor.get_full_name|default:p.repartidor.username }}</span>
+                  {% elif p.estado == 'listo' %}
+                    <form method="post" action="{% url 'operador_asignar_repartidor' p.pk %}" class="d-flex gap-1">
+                      {% csrf_token %}
+                      <select name="repartidor_id" class="form-select form-select-sm" required>
+                        <option value="">Elegir repartidor...</option>
+                        {% for rep in repartidores %}
+                          <option value="{{ rep.pk }}">{{ rep.get_full_name|default:rep.username }}</option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="btn btn-sm btn-domi">Asignar</button>
+                    </form>
+                  {% else %}
+                    <span class="text-muted small">Pendiente</span>
+                  {% endif %}
                 </td>
                 <td class="text-end">${{ p.total|floatformat:0 }}</td>
               </tr>
               {% empty %}
-              <tr><td colspan="5" class="text-center text-muted py-4">Aún no hay pedidos hoy en esta sede.</td></tr>
+              <tr><td colspan="6" class="text-center text-muted py-4">Aún no hay pedidos hoy en esta sede.</td></tr>
               {% endfor %}
             </tbody>
           </table>

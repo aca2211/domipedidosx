@@ -101,10 +101,9 @@ def seleccionar_cliente(request):
 
 @rol_requerido('operador')
 def panel_operador(request):
-    """Panel del operador (HU21): pedidos del día de su sede + enlaces a los módulos."""
+    """Panel del operador (HU21 + HU22): pedidos del día de su sede + asignación de repartidor."""
     sede = sede_del_operador(request)
     if sede is None:
-        # Sin sede se muestra el selector (temporal, igual que en HU15)
         return render(request, 'pedidos/operador/panel.html', {
             'sede': None,
             'sedes': Sede.objects.filter(is_active=True).order_by('name'),
@@ -112,17 +111,47 @@ def panel_operador(request):
 
     pedidos = (
         Pedido.objects
-        .filter(sede=sede, created_at__date=timezone.localdate())  # "hoy" en America/Bogota
-        .select_related('cliente')                                  # evita una consulta por fila
-        .order_by('-created_at', '-id')                             # el más reciente primero
+        .filter(sede=sede, created_at__date=timezone.localdate())
+        .select_related('cliente', 'repartidor')
+        .order_by('-created_at', '-id')
+    )
+    repartidores = (
+        User.objects
+        .filter(role='repartidor', is_active=True)
+        .filter(Q(sede=sede) | Q(sede__isnull=True))
+        .order_by('first_name', 'username')
     )
     return render(request, 'pedidos/operador/panel.html', {
         'sede': sede,
         'sedes': [],
         'pedidos': pedidos,
+        'repartidores': repartidores,
         'alertas_stock': productos_bajo_minimo(sede),
         'capacidad': estado_capacidad(sede),  # HU28
     })
+
+
+
+@rol_requerido('operador')
+@require_POST
+def asignar_repartidor_pedido(request, pk):
+    """Asigna un repartidor a un pedido listo a domicilio (HU22)."""
+    sede = sede_del_operador(request)
+    if sede is None:
+        messages.error(request, 'Primero elige la sede con la que vas a trabajar.')
+        return redirect('operador_panel')
+    from django.http import Http404
+    from .services import AsignacionError, asignar_repartidor
+    try:
+        pedido = asignar_repartidor(pk, sede, _entero(request.POST.get('repartidor_id')))
+    except Pedido.DoesNotExist:
+        raise Http404
+    except AsignacionError as e:
+        messages.error(request, str(e))
+    else:
+        rep_nombre = pedido.repartidor.get_full_name() or pedido.repartidor.username
+        messages.success(request, f'Pedido #{pedido.pk} asignado a {rep_nombre} (En camino).')
+    return redirect('operador_panel')
 
 
 # ---------------------------------------------------------------------------

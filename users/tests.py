@@ -159,7 +159,7 @@ class AccesoOperadorTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
     def test_cambia_la_disponibilidad_de_su_sede(self):
-        r = self.client.post(reverse('admin:menu_sedeproduct_change', args=[self.sp_centro.pk]), {})
+        r = self.client.post(reverse('admin:menu_sedeproduct_change', args=[self.sp_centro.pk]), {'stock_minimo': 0})
         self.assertEqual(r.status_code, 302)
         self.sp_centro.refresh_from_db()
         self.assertFalse(self.sp_centro.is_available)
@@ -195,7 +195,7 @@ class AccesoOperadorTests(TestCase):
         self.client.post(url, {'sede': self.norte.pk, 'product': self.burger.pk, 'is_available': 'on'})
         self.assertEqual(SedeProduct.objects.count(), 2)
         # su sede sí
-        r = self.client.post(url, {'sede': self.centro.pk, 'product': self.pizza.pk, 'is_available': 'on'})
+        r = self.client.post(url, {'sede': self.centro.pk, 'product': self.pizza.pk, 'is_available': 'on', 'stock_minimo': 0})
         self.assertEqual(r.status_code, 302)
         self.assertTrue(SedeProduct.objects.filter(sede=self.centro, product=self.pizza).exists())
 
