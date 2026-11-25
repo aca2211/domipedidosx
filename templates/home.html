@@ -78,10 +78,10 @@
     {% endif %}
     {% if user.role == 'repartidor' %}
     <div class="col-md-6 col-lg-4">
-      <div class="card card-domi role-tile disabled">
+      <a class="card card-domi hover role-tile" href="{% url 'repartidor_panel' %}">
         <i class="bi bi-bicycle"></i>
-        <div><div class="fw-bold">Mis entregas</div><small class="text-muted">Próximo sprint</small></div>
-      </div>
+        <div><div class="fw-bold">Mis entregas</div><small class="text-muted">Pedidos asignados y entregas del día</small></div>
+      </a>
     </div>
     {% endif %}
   </div>

@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views, views_cocina, views_operador, views_repetir
-
+from . import views, views_cocina, views_operador, views_repartidor, views_repetir
 
 from .views_historial_sede import historial_sede
 from .views_busqueda import buscar_clientes, buscar_pedidos
@@ -31,4 +31,6 @@ urlpatterns = [
     path('operador/pedido/quitar/<str:clave>/', views_operador.quitar_linea, name='operador_quitar'),
     path('operador/pedido/confirmar/', views_operador.confirmar_pedido_operador, name='operador_confirmar'),
     path('operador/pedido/<int:pk>/creado/', views_operador.pedido_creado_operador, name='operador_pedido_creado'),
+    path('repartidor/panel/', views_repartidor.panel_repartidor, name='repartidor_panel'),
+    path('repartidor/pedido/<int:pk>/entregar/', views_repartidor.marcar_entregado, name='repartidor_entregar'),
 ]

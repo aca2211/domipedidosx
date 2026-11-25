@@ -241,3 +241,22 @@ def asignar_repartidor(pedido_id, sede, repartidor_id):
         _registrar_estado(pedido, 'en_camino')
         transaction.on_commit(lambda pk=pedido.pk: notificar_pedido(pk, 'estado'))
     return pedido
+
+
+class EntregaError(Exception):
+    """No se pudo registrar la entrega del pedido (HU23)."""
+
+
+def registrar_entrega(pedido_id, repartidor):
+    """El repartidor marca como entregado un pedido suyo en camino (HU23)."""
+    with transaction.atomic():
+        pedido = Pedido.objects.select_for_update().get(pk=pedido_id, repartidor=repartidor)
+        if pedido.estado != 'en_camino':
+            raise EntregaError(
+                f'El pedido #{pedido.pk} no está en camino (estado actual: {pedido.get_estado_display().lower()}).'
+            )
+        pedido.estado = 'entregado'
+        pedido.save(update_fields=['estado', 'updated_at'])
+        _registrar_estado(pedido, 'entregado')
+        transaction.on_commit(lambda pk=pedido.pk: notificar_pedido(pk, 'estado'))
+    return pedido
