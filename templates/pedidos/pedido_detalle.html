@@ -50,6 +50,8 @@
     <hr>
     <div class="small text-muted">
       {{ pedido.get_tipo_entrega_display }} · Pago: {{ pedido.get_metodo_pago_display }}
+      {% if pedido.tiempo_estimado and pedido.estado != 'entregado' and pedido.estado != 'cancelado' %} · Tiempo estimado: ~{{ pedido.tiempo_estimado }} min{% endif %}
+      {% if pedido.repartidor %}<br>Repartidor: {{ pedido.repartidor.get_full_name|default:pedido.repartidor.username }}{% endif %}
       {% if pedido.observaciones %}<br>Observaciones: {{ pedido.observaciones }}{% endif %}
     </div>
   </div>

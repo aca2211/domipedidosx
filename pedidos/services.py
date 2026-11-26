@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from menu.models import Feriado, SedeProduct, StockInsuficiente
 
+from .estimacion import calcular_tiempo_estimado
 from .capacidad import verificar_cupo
 from .cart import Carrito, CarritoError
 from .cobertura import verificar_cobertura
@@ -112,6 +113,12 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
         producto_ids = [l['producto'].pk for l in resumen['lineas']]
         verificar_cupo(sede, producto_ids)  # HU26 + HU27: rechaza si llena, sugiere alternativas
 
+        tiempo_estimado = calcular_tiempo_estimado(
+            sede,
+            resumen['lineas'],
+            tipo_entrega=tipo_entrega,
+            direccion=direccion if tipo_entrega == 'domicilio' else None,
+        )
         pedido = Pedido.objects.create(
             cliente=cliente,
             creado_por=creado_por or cliente,
@@ -123,8 +130,10 @@ def crear_pedido(carrito: Carrito, cliente, metodo_pago, direccion=None,
             subtotal=resumen['subtotal'],
             costo_domicilio=costo_domicilio,
             total=resumen['subtotal'] + costo_domicilio,
+            tiempo_estimado=tiempo_estimado,
             estado='recibido',
         )
+
         DetallePedido.objects.bulk_create([
             DetallePedido(
                 pedido=pedido,

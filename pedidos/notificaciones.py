@@ -22,6 +22,8 @@ def _asunto_y_texto(pedido, evento):
             f'Hola {nombre}, recibimos tu pedido #{pedido.pk} en la sede {pedido.sede.name}.\n'
             f'Total: ${pedido.total:,.0f}.\n'
         )
+        if pedido.tiempo_estimado:
+            texto += f'Tiempo estimado de entrega: {pedido.tiempo_estimado} minutos.\n'
     elif evento == 'cancelado':
         asunto = f'Pedido #{pedido.pk} cancelado'
         texto = f'Hola {nombre}, tu pedido #{pedido.pk} fue cancelado.\n'
