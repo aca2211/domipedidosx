@@ -118,14 +118,15 @@
 
           {% if lineas %}
             <div class="d-flex justify-content-between"><span>Subtotal</span><span>${{ subtotal|floatformat:0 }}</span></div>
-            <div class="d-flex justify-content-between"><span>Domicilio</span><span>${{ costo_domicilio|floatformat:0 }}</span></div>
-            <div class="d-flex justify-content-between fw-bold fs-5 mb-3"><span>Total</span><span>${{ total|floatformat:0 }}</span></div>
+            <div class="d-flex justify-content-between"><span>Domicilio</span><span id="domicilio-monto">${{ costo_domicilio|floatformat:0 }}</span></div>
+            <div class="d-flex justify-content-between fw-bold fs-5 mb-3"><span>Total</span><span id="total-monto">${{ total|floatformat:0 }}</span></div>
 
             <form method="post" action="{% url 'operador_confirmar' %}">
               {% csrf_token %}
               {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
               {% include 'includes/field.html' with field=form.tipo_entrega %}
               {% include 'includes/field.html' with field=form.direccion %}
+              <div id="aviso-cobertura" class="alert alert-warning small {% if not aviso_cobertura %}d-none{% endif %}">{{ aviso_cobertura|default:'' }}</div>
               {% if not tiene_direcciones %}
                 <p class="small text-muted">Este cliente no tiene direcciones guardadas: solo puedes registrar el pedido para mostrador.</p>
               {% endif %}
@@ -139,4 +140,5 @@
     </div>
   </div>
 </div>
+{% if lineas %}{% include 'pedidos/includes/costo_zona_js.html' %}{% endif %}
 {% endblock %}

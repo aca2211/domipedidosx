@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views, views_cocina, views_operador, views_repetir
-
+from . import views, views_cocina, views_operador, views_repartidor, views_repetir
 
 from .views_historial_sede import historial_sede
 from .views_busqueda import buscar_clientes, buscar_pedidos
@@ -19,6 +19,7 @@ urlpatterns = [
     path('cocina/tablero/', views_cocina.tablero_cocina, name='cocina_tablero'),
     path('cocina/pedido/<int:pk>/avanzar/', views_cocina.avanzar_estado, name='cocina_avanzar'),
     path('operador/panel/', views_operador.panel_operador, name='operador_panel'),
+    path('operador/pedido/<int:pk>/asignar/', views_operador.asignar_repartidor_pedido, name='operador_asignar_repartidor'),
     path('operador/historial/', historial_sede, name='operador_historial'),
     path('gestion/pedidos/', buscar_pedidos, name='buscar_pedidos'),
     path('gestion/clientes/', buscar_clientes, name='buscar_clientes'),
@@ -30,4 +31,6 @@ urlpatterns = [
     path('operador/pedido/quitar/<str:clave>/', views_operador.quitar_linea, name='operador_quitar'),
     path('operador/pedido/confirmar/', views_operador.confirmar_pedido_operador, name='operador_confirmar'),
     path('operador/pedido/<int:pk>/creado/', views_operador.pedido_creado_operador, name='operador_pedido_creado'),
+    path('repartidor/panel/', views_repartidor.panel_repartidor, name='repartidor_panel'),
+    path('repartidor/pedido/<int:pk>/entregar/', views_repartidor.marcar_entregado, name='repartidor_entregar'),
 ]

@@ -9,10 +9,11 @@
         <div class="card-body">
           {% csrf_token %}
           {% include 'includes/field.html' with field=form.direccion %}
+          <div id="aviso-cobertura" class="alert alert-warning small {% if not aviso_cobertura %}d-none{% endif %}">{{ aviso_cobertura|default:'' }}</div>
           {% include 'includes/field.html' with field=form.metodo_pago %}
           {% include 'includes/field.html' with field=form.observaciones %}
           <div class="alert alert-light small mb-3"><i class="bi bi-info-circle me-1"></i>El pago es simulado: pagas al recibir tu pedido.</div>
-          <button class="btn btn-domi w-100" type="submit">Hacer pedido · ${{ total|floatformat:0 }}</button>
+          <button class="btn btn-domi w-100" type="submit">Hacer pedido · <span id="total-boton">${{ total|floatformat:0 }}</span></button>
           <a href="{% url 'carrito_ver' %}" class="btn btn-link w-100 mt-1">Volver al carrito</a>
         </div>
       </form>
@@ -27,11 +28,12 @@
           {% endfor %}
           <hr>
           <div class="d-flex justify-content-between"><span>Subtotal</span><span>${{ subtotal|floatformat:0 }}</span></div>
-          <div class="d-flex justify-content-between"><span>Domicilio</span><span>${{ costo_domicilio|floatformat:0 }}</span></div>
-          <div class="d-flex justify-content-between fw-bold mt-1"><span>Total</span><span class="price">${{ total|floatformat:0 }}</span></div>
+          <div class="d-flex justify-content-between"><span>Domicilio</span><span id="domicilio-monto">${{ costo_domicilio|floatformat:0 }}</span></div>
+          <div class="d-flex justify-content-between fw-bold mt-1"><span>Total</span><span class="price" id="total-monto">${{ total|floatformat:0 }}</span></div>
         </div>
       </div>
     </div>
   </div>
 </div>
+{% include 'pedidos/includes/costo_zona_js.html' %}
 {% endblock %}

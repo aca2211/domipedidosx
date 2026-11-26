@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sede, Category, Product, ProductOption, SedeProduct, Feriado, ParametrosGlobales
+from .models import Sede, Category, Product, ProductOption, SedeProduct, Feriado, ParametrosGlobales, TopeCapacidad, ZonaCobertura
 
 
 def es_operador(user):
@@ -213,3 +213,22 @@ class ParametrosGlobalesAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(TopeCapacidad)
+class TopeCapacidadAdmin(admin.ModelAdmin):
+    """Topes de pedidos por sede y franja horaria (HU26). Solo el administrador."""
+    list_display  = ('sede', 'hora_inicio', 'hora_fin', 'max_pedidos', 'is_active')
+    list_filter   = ('sede', 'is_active')
+    list_editable = ('is_active',)
+    ordering      = ('sede', 'hora_inicio')
+
+
+@admin.register(ZonaCobertura)
+class ZonaCoberturaAdmin(admin.ModelAdmin):
+    """Zonas de cobertura con tarifa, tiempo y pedido mínimo (HU24). Solo el administrador."""
+    list_display  = ('sede', 'nombre', 'tarifa_domicilio', 'tiempo_estimado_min', 'pedido_minimo', 'is_active')
+    list_filter   = ('sede', 'is_active')
+    list_editable = ('is_active',)
+    search_fields = ('nombre', 'barrios')
+    ordering      = ('sede', 'nombre')

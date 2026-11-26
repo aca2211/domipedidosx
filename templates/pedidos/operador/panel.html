@@ -21,6 +21,31 @@
       · <a href="?cambiar_sede=1">cambiar</a>
     </p>
 
+    {% if capacidad %}
+      {% if capacidad.lleno %}
+        <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+          <i class="bi bi-exclamation-octagon-fill fs-5"></i>
+          <div>
+            <strong>Cocina al límite.</strong>
+            Se alcanzó el tope de {{ capacidad.tope.max_pedidos }} pedidos
+            en la franja {{ capacidad.tope.hora_inicio|time:"H:i" }}–{{ capacidad.tope.hora_fin|time:"H:i" }}.
+            No se aceptan más pedidos hasta que termine la franja.
+          </div>
+        </div>
+      {% elif capacidad.cerca_del_limite %}
+        <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+          <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+          <div>
+            <strong>La cocina se acerca al límite.</strong>
+            Van {{ capacidad.ocupados }} de {{ capacidad.tope.max_pedidos }} pedidos
+            ({{ capacidad.porcentaje }} %) en la franja
+            {{ capacidad.tope.hora_inicio|time:"H:i" }}–{{ capacidad.tope.hora_fin|time:"H:i" }};
+            quedan {{ capacidad.cupos }}.
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+
     <div class="row g-3 mb-4">
       <div class="col-md-6 col-lg-3">
         <a class="card card-domi hover role-tile" href="{% url 'operador_elegir_cliente' %}">
@@ -48,6 +73,34 @@
       </div>
     </div>
 
+    {% if alertas_stock %}
+    <div class="card card-domi mb-4 border-warning">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Reponer inventario</h5>
+          <span class="badge bg-warning text-dark rounded-pill">{{ alertas_stock|length }}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr><th>Producto</th><th class="text-end">Existencias</th><th class="text-end">Mínimo</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+              {% for item in alertas_stock %}
+              <tr>
+                <td>{{ item.product.name }}</td>
+                <td class="text-end">{{ item.stock }}</td>
+                <td class="text-end">{{ item.stock_minimo }}</td>
+                <td>{% if item.stock == 0 %}<span class="badge bg-danger">Agotado</span>{% else %}<span class="badge bg-warning text-dark">Bajo mínimo</span>{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <div class="card card-domi">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -62,6 +115,7 @@
                 <th>Pedido</th>
                 <th>Cliente</th>
                 <th>Estado</th>
+                <th>Repartidor</th>
                 <th class="text-end">Total</th>
               </tr>
             </thead>
@@ -72,12 +126,32 @@
                 <td>#{{ p.pk }}</td>
                 <td>{{ p.cliente.get_full_name|default:p.cliente.username }}</td>
                 <td>
-                  <span class="badge {% if p.estado == 'entregado' %}bg-success{% elif p.estado == 'cancelado' %}bg-danger{% elif p.estado == 'listo' %}bg-info text-dark{% elif p.estado == 'en_preparacion' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ p.get_estado_display }}</span>
+                  <span class="badge {% if p.estado == 'entregado' %}bg-success{% elif p.estado == 'cancelado' %}bg-danger{% elif p.estado == 'en_camino' %}bg-primary{% elif p.estado == 'listo' %}bg-info text-dark{% elif p.estado == 'en_preparacion' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ p.get_estado_display }}</span>
+                </td>
+                <td>
+                  {% if p.tipo_entrega == 'mostrador' %}
+                    <span class="text-muted small">Mostrador</span>
+                  {% elif p.repartidor %}
+                    <span class="small fw-semibold"><i class="bi bi-bicycle me-1"></i>{{ p.repartidor.get_full_name|default:p.repartidor.username }}</span>
+                  {% elif p.estado == 'listo' %}
+                    <form method="post" action="{% url 'operador_asignar_repartidor' p.pk %}" class="d-flex gap-1">
+                      {% csrf_token %}
+                      <select name="repartidor_id" class="form-select form-select-sm" required>
+                        <option value="">Elegir repartidor...</option>
+                        {% for rep in repartidores %}
+                          <option value="{{ rep.pk }}">{{ rep.get_full_name|default:rep.username }}</option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="btn btn-sm btn-domi">Asignar</button>
+                    </form>
+                  {% else %}
+                    <span class="text-muted small">Pendiente</span>
+                  {% endif %}
                 </td>
                 <td class="text-end">${{ p.total|floatformat:0 }}</td>
               </tr>
               {% empty %}
-              <tr><td colspan="5" class="text-center text-muted py-4">Aún no hay pedidos hoy en esta sede.</td></tr>
+              <tr><td colspan="6" class="text-center text-muted py-4">Aún no hay pedidos hoy en esta sede.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -86,4 +160,9 @@
     </div>
   {% endif %}
 </div>
+{% if capacidad %}
+<script>
+  setTimeout(function () { window.location.reload(); }, 30000);
+</script>
+{% endif %}
 {% endblock %}

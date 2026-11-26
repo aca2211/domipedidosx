@@ -1,0 +1,26 @@
+{# HU24: actualiza domicilio, total y aviso de cobertura al cambiar de dirección (o de tipo de entrega). #}
+{{ costos_direccion|json_script:"costos-direccion" }}
+<script>
+(function () {
+  var datos = JSON.parse(document.getElementById('costos-direccion').textContent);
+  var direccion = document.getElementById('id_direccion');
+  var tipo = document.getElementById('id_tipo_entrega');   // solo existe en el pedido del operador
+  if (!direccion) return;
+  function pesos(n) { return '$' + Math.round(n).toLocaleString('es-CO'); }
+  function poner(id, texto) { var e = document.getElementById(id); if (e) e.textContent = texto; }
+  function actualizar() {
+    var d = datos.direcciones[direccion.value];
+    var mostrador = tipo && tipo.value === 'mostrador';
+    var costo = (d && !mostrador) ? d.costo : 0;
+    var aviso = (d && !mostrador) ? d.aviso : null;
+    poner('domicilio-monto', pesos(costo));
+    poner('total-monto', pesos(datos.subtotal + costo));
+    poner('total-boton', pesos(datos.subtotal + costo));
+    var caja = document.getElementById('aviso-cobertura');
+    if (caja) { caja.textContent = aviso || ''; caja.classList.toggle('d-none', !aviso); }
+  }
+  direccion.addEventListener('change', actualizar);
+  if (tipo) tipo.addEventListener('change', actualizar);
+  actualizar();
+})();
+</script>

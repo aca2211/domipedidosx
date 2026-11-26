@@ -1,10 +1,11 @@
 from decimal import Decimal
 
 from django.db import models
+from django.utils import timezone
 from django.conf import settings
 
 class Pedido(models.Model):
-    ESTADOS =[('recibido', 'Recibido'), ('en_preparacion', 'En preparacion'), ('listo', 'Listo'), ('entregado', 'Entregado'), ('cancelado', 'Cancelado')]
+    ESTADOS =[('recibido', 'Recibido'), ('en_preparacion', 'En preparacion'), ('listo', 'Listo'), ('en_camino', 'En camino'), ('entregado', 'Entregado'), ('cancelado', 'Cancelado')]
     METODOS_PAGO =[('efectivo', 'Efectivo'), ('tarjeta', 'Tarjeta'), ('transferencia', 'Transferencia')]
     TIPOS_ENTREGA =[('domicilio', 'Domicilio'), ('mostrador', 'Mostrador')]
 
@@ -13,28 +14,34 @@ class Pedido(models.Model):
     TRANSICIONES = {
         'recibido': 'en_preparacion',
         'en_preparacion': 'listo',
-        'listo': 'entregado',
+        'listo': 'en_camino',      # para mostrador se resuelve a 'entregado' en siguiente_estado()
+        'en_camino': 'entregado',
         'entregado': None,
         'cancelado': None,
     }
 
-    cliente = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pedidos', on_delete=models.CASCADE) 
+    cliente = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pedidos', on_delete=models.CASCADE)
     creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pedidos_creados', on_delete=models.CASCADE)
+    repartidor = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pedidos_asignados', null=True,blank=True, on_delete=models.SET_NULL,)
     sede = models.ForeignKey('menu.Sede', related_name='pedidos', on_delete=models.CASCADE)
-    direccion = models.ForeignKey('users.Direccion', null=True, blank=True, on_delete=models.SET_NULL) 
+    direccion = models.ForeignKey('users.Direccion', null=True, blank=True, on_delete=models.SET_NULL)
     tipo_entrega = models.CharField(choices=TIPOS_ENTREGA, default='domicilio', max_length=20)
     metodo_pago = models.CharField(choices=METODOS_PAGO, max_length=20)
     observaciones = models.TextField(blank=True)
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2) 
-    costo_domicilio = models.DecimalField(max_digits=12, decimal_places=2, default=0) 
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+    costo_domicilio = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=12, decimal_places=2)
+    tiempo_estimado = models.PositiveIntegerField(null=True, blank=True, help_text='Minutos estimados de entrega (HU32)')
     estado = models.CharField(choices=ESTADOS, default='recibido', max_length=20)
-    created_at = models.DateTimeField(auto_now_add=True) 
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
     def __str__(self):
-       return f'Pedido #{self.pk}'
+        return f'Pedido #{self.pk}'
 
     def siguiente_estado(self):
+        if self.estado == 'listo' and self.tipo_entrega == 'mostrador':
+            return 'entregado'
         return self.TRANSICIONES.get(self.estado)
 
     def puede_avanzar(self):
@@ -56,3 +63,23 @@ class DetallePedido(models.Model):
             {**o, 'con_recargo': Decimal(o.get('extra') or '0') > 0}
             for o in self.opciones
         ]
+
+
+class HistorialEstado(models.Model):
+    """Momento en que un pedido entró a cada estado (HU43).
+
+    Una fila por cada cambio de estado (y una al crear el pedido). Con ellas se mide
+    cuánto tarda cada etapa, que es lo que necesitan HU32, HU34 y HU35.
+    """
+    pedido = models.ForeignKey(Pedido, related_name='historial_estados', on_delete=models.CASCADE)
+    estado = models.CharField('estado', choices=Pedido.ESTADOS, max_length=20)
+    entrada = models.DateTimeField('entrada al estado', default=timezone.now)
+
+    class Meta:
+        verbose_name = 'historial de estado'
+        verbose_name_plural = 'historial de estados'
+        ordering = ['entrada', 'id']
+
+    def __str__(self):
+        return f'Pedido #{self.pedido_id} · {self.get_estado_display()} · {self.entrada:%H:%M:%S}'
+
