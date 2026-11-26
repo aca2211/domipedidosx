@@ -128,3 +128,36 @@ class PanelRepartidorTests(TestCase):  # HU23
         self.assertEqual(r.status_code, 404)
         ajeno.refresh_from_db()
         self.assertEqual(ajeno.estado, 'en_camino')
+
+
+class AvisosAsignacionTests(TestCase):  # HU45
+    def setUp(self):
+        self.sede = Sede.objects.create(name='Centro', address='Cra 1')
+        self.cliente = User.objects.create_user('cli', email='cli@test.com', password='x', role='cliente')
+        self.repartidor = User.objects.create_user(
+            'rep1', email='rep@test.com', password='x', role='repartidor', sede=self.sede,
+        )
+
+    def test_asignar_envia_correo_a_repartidor_y_cliente(self):
+        from django.core import mail
+        from .services import asignar_repartidor
+
+        pedido = Pedido.objects.create(
+            cliente=self.cliente,
+            creado_por=self.cliente,
+            sede=self.sede,
+            tipo_entrega='domicilio',
+            metodo_pago='efectivo',
+            subtotal=Decimal('25000'),
+            total=Decimal('25000'),
+            estado='listo',
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            asignar_repartidor(pedido.pk, self.sede, self.repartidor.pk)
+
+        self.assertEqual(len(mail.outbox), 2)
+        destinatarios = {m.to[0]: m.subject for m in mail.outbox}
+        self.assertIn('rep@test.com', destinatarios)
+        self.assertIn('cli@test.com', destinatarios)
+        self.assertIn('asignado', destinatarios['rep@test.com'].lower())
+        self.assertIn('en camino', destinatarios['cli@test.com'].lower())

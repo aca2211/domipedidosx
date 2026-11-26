@@ -239,6 +239,7 @@ def asignar_repartidor(pedido_id, sede, repartidor_id):
         pedido.estado = 'en_camino'
         pedido.save(update_fields=['repartidor', 'estado', 'updated_at'])
         _registrar_estado(pedido, 'en_camino')
+        transaction.on_commit(lambda pk=pedido.pk: notificar_pedido(pk, 'asignado'))
         transaction.on_commit(lambda pk=pedido.pk: notificar_pedido(pk, 'estado'))
     return pedido
 
