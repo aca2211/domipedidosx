@@ -1,0 +1,31 @@
+{% extends "admin/change_list.html" %}
+{% load static admin_urls %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/admin-listados.css' %}">
+{% endblock %}
+
+{% block content_title %}
+    <header class="domi-list-header">
+        <div>
+            <p class="domi-list-section">{{ cl.opts.app_config.verbose_name }}</p>
+            <h1>{{ cl.opts.verbose_name_plural|capfirst }}</h1>
+        </div>
+        {% if has_add_permission %}
+            <a class="domi-list-add" href="{% url cl.opts|admin_urlname:'add' as add_url %}{% add_preserved_filters add_url is_popup to_field %}">
+                <span aria-hidden="true">+</span> Añadir {{ cl.opts.verbose_name }}
+            </a>
+        {% endif %}
+    </header>
+{% endblock %}
+
+{% block object-tools %}
+    {% if not has_add_permission %}{{ block.super }}{% endif %}
+{% endblock %}
+
+{% block result_list %}
+    <div class="domi-list-records">
+        {{ block.super }}
+    </div>
+{% endblock %}

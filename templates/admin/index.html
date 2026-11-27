@@ -1,0 +1,48 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main" class="domi-overview">
+    {% for app in app_list %}
+        <section class="domi-section" aria-labelledby="domi-section-{{ app.app_label }}">
+            <h2 id="domi-section-{{ app.app_label }}" class="domi-section-title">
+                {% if app_list|length > 1 %}
+                    <a href="{{ app.app_url }}">{{ app.name }}</a>
+                {% else %}
+                    {{ app.name }}
+                {% endif %}
+            </h2>
+            <div class="domi-card-grid">
+                {% for model in app.models %}
+                    <article class="domi-model-card">
+                        <h3>
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                            {% else %}
+                                {{ model.name }}
+                            {% endif %}
+                        </h3>
+                        <div class="domi-card-actions">
+                            {% if model.admin_url %}
+                                <a class="domi-card-link" href="{{ model.admin_url }}">
+                                    {% if model.view_only %}Ver{% else %}Modificar{% endif %}
+                                    <span aria-hidden="true">→</span>
+                                    <span class="visually-hidden"> {{ model.name }}</span>
+                                </a>
+                            {% endif %}
+                            {% if model.add_url %}
+                                <a class="domi-card-add" href="{{ model.add_url }}">
+                                    <span aria-hidden="true">+</span> Añadir
+                                    <span class="visually-hidden"> {{ model.name }}</span>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+    {% empty %}
+        <p>{% translate "You don’t have permission to view or edit anything." %}</p>
+    {% endfor %}
+</div>
+{% endblock %}

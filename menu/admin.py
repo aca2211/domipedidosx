@@ -1,4 +1,6 @@
+from django import forms
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Sede, Category, Product, ProductOption, SedeProduct, Feriado, ParametrosGlobales, TopeCapacidad, ZonaCobertura
 
 
@@ -100,14 +102,74 @@ class ProductOptionInline(admin.TabularInline):
     extra = 1
 
 
+class ProductAdminForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = '__all__'
+
+    class Media:
+        js = ('js/admin-product-image.js',)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('image') and cleaned_data.get('image_url'):
+            self.add_error(
+                'image_url',
+                'Elige una sola opción. Para usar el enlace, marca «Limpiar» en la imagen actual.',
+            )
+        return cleaned_data
+
+
 @admin.register(Product)
 class ProductAdmin(OperadorAdminMixin, admin.ModelAdmin):
     """Productos (HU09). El operador crea productos (quedan en su sede) y edita solo los que
     se venden únicamente en su sede; los compartidos con otras sedes los edita el administrador."""
+    form = ProductAdminForm
+    fieldsets = (
+        ('Datos del producto', {
+            'fields': ('name', 'category', 'description', 'price', 'prep_time_minutes'),
+        }),
+        ('Imagen del producto', {
+            'fields': ('image', 'image_url'),
+            'description': 'Sube una imagen o usa un enlace directo.',
+        }),
+    )
     campo_sede = 'sedes'
     operador_puede_agregar = True
     operador_puede_editar = True
-    list_display = ('name', 'category', 'price', 'prep_time_minutes')
+    list_display = ('nombre_con_imagen', 'categoria_etiqueta', 'precio_cop', 'prep_time_minutes')
+    list_display_links = ('nombre_con_imagen',)
+
+    @admin.display(description='Producto', ordering='name')
+    def nombre_con_imagen(self, obj):
+        if obj.display_image_url:
+            miniatura = format_html(
+                '<img class="domi-product-thumb" src="{}" alt="" loading="lazy" '
+                'referrerpolicy="no-referrer">',
+                obj.display_image_url,
+            )
+        else:
+            miniatura = format_html(
+                '<span class="domi-product-thumb domi-product-thumb-empty" title="Sin imagen">{}</span>',
+                'Sin foto',
+            )
+        return format_html(
+            '<span class="domi-product-name">{}<span>{}</span></span>',
+            miniatura,
+            obj.name,
+        )
+
+    @admin.display(description='Categoría', ordering='category__name')
+    def categoria_etiqueta(self, obj):
+        return format_html('<span class="domi-category-tag">{}</span>', obj.category.name)
+
+    @admin.display(description='Precio', ordering='price')
+    def precio_cop(self, obj):
+        entero, centavos = format(obj.price, ',.2f').split('.')
+        importe = entero.replace(',', '.')
+        if centavos != '00':
+            importe = f'{importe},{centavos}'
+        return format_html('<span class="domi-price">$&nbsp;{}</span>', importe)
     list_filter = ('category', 'sedes')
     search_fields = ('name',)
     inlines = [SedeProductInline, ProductOptionInline]

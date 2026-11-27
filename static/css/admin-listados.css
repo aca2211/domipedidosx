@@ -1,0 +1,245 @@
+body.change-list #content {
+    box-sizing: border-box;
+    width: auto;
+    max-width: 96rem;
+    margin-inline: auto;
+}
+
+#content .domi-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .85rem;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+    background: var(--body-bg);
+    border: 1px solid var(--hairline-color);
+    border-inline-start: 4px solid #A14646;
+    border-radius: 12px;
+}
+
+#content .domi-list-section {
+    margin: 0 0 .25rem;
+    padding: 0;
+    color: var(--link-fg);
+    font-size: .8rem;
+    font-weight: 650;
+}
+
+#content .domi-list-header h1 {
+    margin: 0;
+    color: var(--body-fg);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+#content .domi-list-add {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .65rem .85rem;
+    background: #A14646;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+#content .domi-list-add:hover {
+    background: #783535;
+}
+
+#content #changelist:has(.domi-list-records) {
+    background: transparent;
+    border: 0;
+}
+
+#content #changelist #toolbar {
+    padding: .7rem .85rem;
+    margin-bottom: .85rem;
+    background: var(--body-bg);
+    border: 1px solid var(--hairline-color);
+    border-radius: 12px;
+}
+
+#content #changelist-search > div {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+#content #changelist-search #searchbar {
+    box-sizing: border-box;
+    flex: 1 1 12rem;
+    min-width: 0;
+    max-width: 30rem;
+    height: 2.35rem;
+    padding: .45rem .65rem;
+    background: var(--darkened-bg);
+    color: var(--body-fg);
+}
+
+#content #changelist-search input[type="submit"] {
+    height: 2.35rem;
+    padding: .45rem .85rem;
+    background: var(--body-bg);
+    color: var(--link-fg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-weight: 650;
+}
+
+#content #changelist-search input[type="submit"]:hover {
+    background: var(--selected-row);
+}
+
+#content .domi-list-records .results {
+    margin-bottom: 0;
+    background: var(--body-bg);
+    border: 1px solid var(--hairline-color);
+    border-radius: 12px;
+    overflow: auto;
+}
+
+#content .domi-list-records table {
+    width: 100%;
+    border: 0;
+}
+
+#content .domi-list-records thead th {
+    background: var(--selected-row);
+    color: var(--body-fg);
+}
+
+#content .domi-list-records thead th .text > :is(a, span) {
+    padding: .8rem .9rem;
+}
+
+#content #changelist .domi-list-records tbody :is(th, td) {
+    padding: .75rem .9rem;
+    font-size: .875rem;
+    vertical-align: middle;
+}
+
+#content .domi-list-records tbody tr:last-child > * {
+    border-bottom: 0;
+}
+
+#content .domi-list-records tbody th a {
+    color: var(--link-fg);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+#content .domi-list-records tbody th a:hover {
+    text-decoration: underline;
+    text-underline-offset: .2em;
+}
+
+#content #changelist-filter {
+    border: 1px solid var(--hairline-color);
+    border-top: 3px solid #FDB773;
+}
+
+#content #changelist-filter li.selected {
+    background: var(--selected-row);
+    border-inline-start: 3px solid #DA6556;
+    border-radius: 0 6px 6px 0;
+}
+
+#content #changelist-filter li.selected a {
+    color: var(--link-fg);
+    font-weight: 650;
+}
+
+#content #changelist .paginator {
+    background: transparent;
+    border-top: 0;
+}
+
+#content :is(.domi-list-add, #changelist-search input, #changelist-filter a):focus-visible {
+    outline: 2px solid #EB895B;
+    outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+    #content .domi-list-header {
+        align-items: flex-start;
+    }
+
+    #content #changelist-search #searchbar {
+        flex-basis: 8rem;
+    }
+}
+
+/* Cabecera y acentos institucionales */
+body.change-list #content {
+    --domi-granate: #A14646;
+    --domi-coral: #DA6556;
+    --domi-naranja: #EB895B;
+    --domi-durazno: #FDB773;
+    max-width: none;
+}
+
+#content .domi-list-header {
+    align-items: flex-end;
+    min-height: 8.5rem;
+    box-sizing: border-box;
+    padding: clamp(1.25rem, 2.5vw, 2rem);
+    border: 0;
+    border-radius: 16px;
+    background:
+        linear-gradient(90deg, var(--domi-coral), var(--domi-naranja), var(--domi-durazno))
+        bottom / 100% 4px no-repeat,
+        var(--domi-granate);
+}
+
+#content .domi-list-section {
+    width: fit-content;
+    margin-bottom: .55rem;
+    padding: .22rem .55rem;
+    border-radius: 5px;
+    color: #482323;
+    background: var(--domi-durazno);
+}
+
+#content .domi-list-header h1 {
+    color: #fff;
+    font-size: clamp(1.75rem, 3.1vw, 2.5rem);
+}
+
+#content .domi-list-header a.domi-list-add {
+    background: #fff;
+    color: var(--domi-granate);
+    text-decoration: none;
+}
+
+#content .domi-list-header a.domi-list-add:hover {
+    background: var(--domi-durazno);
+}
+
+#content .domi-list-header a.domi-list-add:focus-visible {
+    outline: 3px solid var(--domi-durazno);
+    outline-offset: 4px;
+}
+
+#content #changelist-filter {
+    border-top-color: var(--domi-naranja);
+}
+
+#content #changelist-filter li.selected {
+    border-inline-start-color: var(--domi-coral);
+    background: color-mix(in srgb, var(--domi-durazno) 22%, var(--body-bg));
+}
+
+#content .domi-list-records thead th {
+    background: color-mix(in srgb, var(--domi-durazno) 20%, var(--body-bg));
+}
+
+@media (max-width: 767px) {
+    #content .domi-list-header {
+        align-items: flex-start;
+        min-height: auto;
+    }
+}
