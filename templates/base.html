@@ -10,10 +10,10 @@
   <link href="{% static 'css/domi.css' %}" rel="stylesheet">
 </head>
 <body>
-<nav class="navbar navbar-expand-md navbar-light navbar-domi sticky-top shadow-sm">
+<nav class="navbar {% if user.is_authenticated and user.role == 'admin' %}navbar-expand-xl{% else %}navbar-expand-md{% endif %} navbar-light navbar-domi sticky-top shadow-sm">
   <div class="container">
     <a class="navbar-brand fw-bold" href="{% url 'home' %}"><img src="{% static 'img/logo-icono.png' %}" alt="Logo de DomiPedidosX"><span>DomiPedidos<span class="x">X</span></span></a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Abrir o cerrar navegación">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="nav">
@@ -25,6 +25,22 @@
         {% endif %}
         {% if user.is_authenticated and user.role == 'repartidor' %}
         <li class="nav-item"><a class="nav-link" href="{% url 'repartidor_panel' %}"><i class="bi bi-bicycle me-1"></i>Mis entregas</a></li>
+        {% endif %}
+        {# Accesos de navegación por rol #}
+        {% if user.is_authenticated %}
+          {% if user.role == 'cliente' %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'perfil' %}"><i class="bi bi-person-gear me-1" aria-hidden="true"></i>Mi perfil</a></li>
+          {% elif user.role == 'cocina' %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'cocina_tablero' %}"><i class="bi bi-fire me-1" aria-hidden="true"></i>Tablero de cocina</a></li>
+          {% elif user.role == 'operador' %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'operador_panel' %}"><i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Panel del operador</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'admin:app_list' app_label='menu' %}"><i class="bi bi-shop me-1" aria-hidden="true"></i>Gestionar menú</a></li>
+          {% elif user.role == 'admin' %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'admin:app_list' app_label='menu' %}"><i class="bi bi-shop me-1" aria-hidden="true"></i>Gestionar menú</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'admin:users_customuser_changelist' %}"><i class="bi bi-people me-1" aria-hidden="true"></i>Usuarios y roles</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'buscar_pedidos' %}"><i class="bi bi-search me-1" aria-hidden="true"></i>Buscar pedidos</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'buscar_clientes' %}"><i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Buscar clientes</a></li>
+          {% endif %}
         {% endif %}
       </ul>
       <div class="d-flex align-items-center gap-2">
