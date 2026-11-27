@@ -38,7 +38,7 @@ class CargarDemoTests(TestCase):
         self.assertEqual(c['productos'], 10)
         self.assertEqual(c['sede_productos'], 20)   # cada producto en cada sede
         self.assertEqual(
-            set(User.objects.values_list('role', flat=True)), {'cliente', 'operador', 'cocina', 'admin'},
+            set(User.objects.values_list('role', flat=True)), {'cliente', 'operador', 'cocina', 'repartidor', 'admin'},
         )
 
     def test_hay_disponibilidad_distinta_por_sede(self):
@@ -66,7 +66,7 @@ class CargarDemoTests(TestCase):
 
     def test_los_usuarios_entran_con_la_clave_demo(self):
         cargar()
-        for username in ('demo_cliente', 'demo_operador', 'demo_cocina', 'demo_admin'):
+        for username in ('demo_cliente', 'demo_operador', 'demo_cocina', 'demo_repartidor', 'demo_admin'):
             self.assertTrue(self.client.login(username=username, password='demo1234'), username)
 
     def test_no_pisa_a_un_admin_real(self):

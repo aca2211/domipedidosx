@@ -73,6 +73,7 @@ USUARIOS = [
     ('demo_cliente', 'cliente', 'Ana', 'Cliente'),
     ('demo_operador', 'operador', 'Oscar', 'Operador'),
     ('demo_cocina', 'cocina', 'Carla', 'Cocina'),
+    ('demo_repartidor', 'repartidor', 'Rafael', 'Repartidor'),
     ('demo_admin', 'admin', 'Adriana', 'Admin'),
 ]
 
