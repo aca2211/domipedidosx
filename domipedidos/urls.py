@@ -12,3 +12,13 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Corregir el enlace /Quit detectado por la terminal en desarrollo.
+from django.conf import settings as _settings
+from django.urls import path as _path
+from django.views.generic import RedirectView as _RedirectView
+
+if _settings.DEBUG:
+    urlpatterns += [
+        _path("Quit", _RedirectView.as_view(pattern_name="home")),
+    ]
