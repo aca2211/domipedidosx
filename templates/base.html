@@ -18,28 +18,29 @@
     </button>
     <div class="collapse navbar-collapse" id="nav">
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'menu_list' %}"><i class="bi bi-journal-richtext me-1"></i>Menú</a></li>
+        {# Página activa en la navegación #}
+        <li class="nav-item">{% url 'menu_list' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-journal-richtext me-1"></i>Menú</a></li>
         {% if user.is_authenticated and user.role == 'cliente' %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'mis_pedidos' %}"><i class="bi bi-receipt me-1"></i>Mis pedidos</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'carrito_ver' %}"><i class="bi bi-cart3 me-1"></i>Carrito{% if carrito_cantidad %} <span class="badge badge-carrito">{{ carrito_cantidad }}</span>{% endif %}</a></li>
+        <li class="nav-item">{% url 'mis_pedidos' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-receipt me-1"></i>Mis pedidos</a></li>
+        <li class="nav-item">{% url 'carrito_ver' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-cart3 me-1"></i>Carrito{% if carrito_cantidad %} <span class="badge badge-carrito">{{ carrito_cantidad }}</span>{% endif %}</a></li>
         {% endif %}
         {% if user.is_authenticated and user.role == 'repartidor' %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'repartidor_panel' %}"><i class="bi bi-bicycle me-1"></i>Mis entregas</a></li>
+        <li class="nav-item">{% url 'repartidor_panel' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-bicycle me-1"></i>Mis entregas</a></li>
         {% endif %}
         {# Accesos de navegación por rol #}
         {% if user.is_authenticated %}
           {% if user.role == 'cliente' %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'perfil' %}"><i class="bi bi-person-gear me-1" aria-hidden="true"></i>Mi perfil</a></li>
+            <li class="nav-item">{% url 'perfil' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-person-gear me-1" aria-hidden="true"></i>Mi perfil</a></li>
           {% elif user.role == 'cocina' %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'cocina_tablero' %}"><i class="bi bi-fire me-1" aria-hidden="true"></i>Tablero de cocina</a></li>
+            <li class="nav-item">{% url 'cocina_tablero' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-fire me-1" aria-hidden="true"></i>Tablero de cocina</a></li>
           {% elif user.role == 'operador' %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'operador_panel' %}"><i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Panel del operador</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'admin:app_list' app_label='menu' %}"><i class="bi bi-shop me-1" aria-hidden="true"></i>Gestionar menú</a></li>
+            <li class="nav-item">{% url 'operador_panel' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Panel del operador</a></li>
+            <li class="nav-item">{% url 'admin:app_list' app_label='menu' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-shop me-1" aria-hidden="true"></i>Gestionar menú</a></li>
           {% elif user.role == 'admin' %}
-            <li class="nav-item"><a class="nav-link" href="{% url 'admin:app_list' app_label='menu' %}"><i class="bi bi-shop me-1" aria-hidden="true"></i>Gestionar menú</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'admin:users_customuser_changelist' %}"><i class="bi bi-people me-1" aria-hidden="true"></i>Usuarios y roles</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'buscar_pedidos' %}"><i class="bi bi-search me-1" aria-hidden="true"></i>Buscar pedidos</a></li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'buscar_clientes' %}"><i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Buscar clientes</a></li>
+            <li class="nav-item">{% url 'admin:app_list' app_label='menu' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-shop me-1" aria-hidden="true"></i>Gestionar menú</a></li>
+            <li class="nav-item">{% url 'admin:users_customuser_changelist' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-people me-1" aria-hidden="true"></i>Usuarios y roles</a></li>
+            <li class="nav-item">{% url 'buscar_pedidos' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-search me-1" aria-hidden="true"></i>Buscar pedidos</a></li>
+            <li class="nav-item">{% url 'buscar_clientes' as domi_nav_url %}<a class="nav-link{% if request.path == domi_nav_url %} domi-nav-current{% endif %}" href="{{ domi_nav_url }}"{% if request.path == domi_nav_url %} aria-current="page"{% endif %}><i class="bi bi-person-lines-fill me-1" aria-hidden="true"></i>Buscar clientes</a></li>
           {% endif %}
         {% endif %}
       </ul>
