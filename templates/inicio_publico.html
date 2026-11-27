@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}DomiPedidosX · Pide en tu sede{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/inicio-publico.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="inicio-hero" aria-labelledby="titulo-inicio">
+  <div class="inicio-hero-texto">
+    <h1 id="titulo-inicio">Algo rico<br>está en camino.</h1>
+    <p>Explora el menú de tu sede, elige tus favoritos y sigue tu pedido hasta que llegue.</p>
+    <a class="inicio-cta" href="{% url 'menu_list' %}">
+      Ver menú <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+    </a>
+  </div>
+
+  <div class="inicio-hero-foto">
+    <img
+      src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&amp;fit=crop&amp;w=1200&amp;q=85"
+      alt="Hamburguesa con vegetales frescos y pan de sésamo"
+      width="1200"
+      height="900"
+      fetchpriority="high"
+      referrerpolicy="no-referrer">
+  </div>
+</section>
+
+{% if destacados %}
+<section class="inicio-destacados" aria-labelledby="titulo-destacados">
+  <div class="inicio-destacados-encabezado">
+    <h2 id="titulo-destacados">Antojos del menú</h2>
+    <a href="{% url 'menu_list' %}">
+      Ver menú completo <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    </a>
+  </div>
+
+  <div class="inicio-catalogo">
+    {% for producto in destacados %}
+      {% with foto=producto.display_image_url %}
+        <article class="inicio-producto">
+          <div class="inicio-producto-foto">
+            {% if foto %}
+              <img src="{{ foto }}" alt="" loading="lazy" decoding="async"
+                   referrerpolicy="no-referrer">
+            {% else %}
+              <i class="bi bi-fork-knife" aria-hidden="true"></i>
+            {% endif %}
+          </div>
+          <div class="inicio-producto-datos">
+            <h3>{{ producto.name }}</h3>
+            <p>$ {{ producto.price|floatformat:"-2g" }}</p>
+          </div>
+        </article>
+      {% endwith %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="inicio-guia" aria-labelledby="titulo-guia">
+  <h2 id="titulo-guia">De tu sede a tu mesa</h2>
+
+  <div class="inicio-pasos">
+    <div>
+      <i class="bi bi-shop" aria-hidden="true"></i>
+      <h3>Elige tu sede</h3>
+      <p>Consulta qué hay disponible antes de armar el pedido.</p>
+    </div>
+    <div>
+      <i class="bi bi-bag-check" aria-hidden="true"></i>
+      <h3>Arma tu pedido</h3>
+      <p>Añade tus favoritos y revisa el carrito antes de confirmar.</p>
+    </div>
+    <div>
+      <i class="bi bi-receipt" aria-hidden="true"></i>
+      <h3>Consulta el estado</h3>
+      <p>Revisa cómo va tu pedido desde tu cuenta.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

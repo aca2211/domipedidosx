@@ -7,6 +7,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from django.db.models import Case, IntegerField, Q, Value, When
+
+from menu.models import Product
+
 from .forms import DireccionForm, PerfilForm, RegistroForm
 from .models import Direccion
 
@@ -26,9 +30,26 @@ def register(request):
     return render(request, 'registration/register.html', {'form': form})
 
 
-@login_required
 def home(request):
-    return render(request, 'home.html')
+    if request.user.is_authenticated:
+        return render(request, 'home.html')
+
+    destacados = (
+        Product.objects.filter(
+            sede_products__is_available=True,
+            sede_products__sede__is_active=True,
+        )
+        .annotate(
+            tiene_foto=Case(
+                When(Q(image='') & Q(image_url=''), then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            ),
+        )
+        .distinct()
+        .order_by('-tiene_foto', 'name', 'pk')[:3]
+    )
+    return render(request, 'inicio_publico.html', {'destacados': destacados})
 
 
 # ---------- Perfil y direcciones del cliente (HU05) ----------

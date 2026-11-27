@@ -1,0 +1,221 @@
+.inicio-hero {
+    display: grid;
+    grid-template-columns: 1fr .9fr;
+    min-height: 27rem;
+    overflow: hidden;
+    border-radius: clamp(1rem, 3vw, 2rem);
+    background: #A14646;
+    color: #fff;
+}
+
+.inicio-hero-texto {
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 1.25rem;
+    padding: clamp(1.6rem, 5.5vw, 5rem);
+}
+
+.inicio-hero h1 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(2.65rem, 6vw, 5.25rem);
+    font-weight: 800;
+    letter-spacing: -.055em;
+    line-height: .98;
+    text-wrap: balance;
+}
+
+.inicio-hero p {
+    max-width: 28rem;
+    margin: 0;
+    color: #fff0e6;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    line-height: 1.55;
+}
+
+.inicio-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: .9rem;
+    min-height: 3rem;
+    padding: .65rem 1.1rem;
+    border-radius: .75rem;
+    background: #FDB773;
+    color: #482323;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.inicio-cta:hover {
+    background: #EB895B;
+    color: #482323;
+}
+
+.inicio-cta:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 4px;
+}
+
+.inicio-hero-foto {
+    position: relative;
+    min-height: 16rem;
+    background: #EB895B;
+}
+
+.inicio-hero-foto img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.inicio-guia {
+    padding-block: clamp(2rem, 5vw, 3.75rem) 1rem;
+}
+
+.inicio-guia h2 {
+    margin: 0 0 1rem;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 750;
+    letter-spacing: -.025em;
+}
+
+.inicio-pasos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.inicio-pasos > div {
+    padding: 1.25rem;
+    border: 1px solid #efdfd9;
+    border-radius: 1rem;
+    background: #fff;
+}
+
+.inicio-pasos i {
+    display: inline-grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    margin-bottom: .75rem;
+    border-radius: .7rem;
+    background: #fff0e6;
+    color: #A14646;
+    box-shadow: inset 0 -2px #DA6556;
+    font-size: 1.1rem;
+}
+
+.inicio-pasos h3 {
+    margin: 0 0 .35rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.inicio-pasos p {
+    margin: 0;
+    color: #5b4a48;
+}
+
+@media (max-width: 767.98px) {
+    .inicio-hero,
+    .inicio-pasos {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .inicio-hero {
+        min-height: auto;
+    }
+
+    .inicio-hero-foto {
+        min-height: 14rem;
+    }
+}
+
+/* Antojos del menú */
+.inicio-destacados {
+    padding-top: clamp(2rem, 5vw, 3.75rem);
+}
+
+.inicio-destacados-encabezado {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.inicio-destacados-encabezado h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 750;
+    letter-spacing: -.025em;
+}
+
+.inicio-destacados-encabezado a {
+    color: #A14646;
+    font-weight: 700;
+    text-underline-offset: .2em;
+}
+
+.inicio-catalogo {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.inicio-producto {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #efdfd9;
+    border-radius: 1rem;
+    background: #fff;
+}
+
+.inicio-producto-foto {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #fff0e6;
+    color: #A14646;
+    font-size: 2rem;
+}
+
+.inicio-producto-foto img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: cover;
+}
+
+.inicio-producto-datos {
+    padding: .95rem 1.1rem;
+}
+
+.inicio-producto-datos h3 {
+    margin: 0 0 .45rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.inicio-producto-datos p {
+    display: inline-block;
+    margin: 0;
+    padding: .25rem .6rem;
+    border-radius: .4rem;
+    background: #FDB773;
+    color: #482323;
+    font-weight: 700;
+}
+
+@media (max-width: 575.98px) {
+    .inicio-catalogo {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
