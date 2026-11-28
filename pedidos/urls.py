@@ -16,6 +16,10 @@ urlpatterns = [
     path('pedido/<int:pk>/cancelar/', views.cancelar_mi_pedido, name='pedido_cancelar'),
     path('pedido/<int:pk>/repetir/', views_repetir.repetir_mi_pedido, name='pedido_repetir'),
     path('pedido/<int:pk>/creado/', views.pedido_creado, name='pedido_creado'),
+    path(
+        'pedido/<int:pk>/estado/', views.pedido_creado,
+        {'solo_estado': True}, name='pedido_estado',
+    ),
     path('cocina/tablero/', views_cocina.tablero_cocina, name='cocina_tablero'),
     path('cocina/pedido/<int:pk>/avanzar/', views_cocina.avanzar_estado, name='cocina_avanzar'),
     path('operador/panel/', views_operador.panel_operador, name='operador_panel'),
