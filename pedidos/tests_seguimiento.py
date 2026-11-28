@@ -52,9 +52,33 @@ class SeguimientoPedidoTests(TestCase):  # HU20
 
     def test_se_refresca_solo_mientras_esta_en_curso(self):
         for estado in ('recibido', 'en_preparacion', 'listo'):
-            self.assertContains(self.ver(self.crear_pedido(estado=estado)), 'window.location.reload', msg_prefix=estado)
+            respuesta = self.ver(self.crear_pedido(estado=estado))
+            self.assertContains(respuesta, 'seguimiento-pedido.js')
+            self.assertNotContains(respuesta, 'window.location.reload')
         for estado in ('entregado', 'cancelado'):
-            self.assertNotContains(self.ver(self.crear_pedido(estado=estado)), 'window.location.reload', msg_prefix=estado)
+            self.assertNotContains(self.ver(self.crear_pedido(estado=estado)), 'seguimiento-pedido.js')
+
+    def test_fragmento_refleja_el_estado_actual_y_se_detiene_al_entregar(self):
+        pedido = self.crear_pedido(estado='listo')
+        Pedido.objects.filter(pk=pedido.pk).update(tipo_entrega='domicilio', estado='en_camino')
+        url = reverse('pedido_estado', args=[pedido.pk])
+        respuesta = self.client.get(url)
+        self.assertTemplateUsed(respuesta, 'pedidos/includes/seguimiento_pedido.html')
+        self.assertContains(respuesta, 'data-estado="en_camino"')
+        self.assertContains(respuesta, 'data-en-curso="1"')
+        self.assertNotContains(respuesta, '<html')
+        self.assertIn('no-store', respuesta.headers['Cache-Control'])
+        self.assertTrue(respuesta.context['pasos'][3]['actual'])
+
+        Pedido.objects.filter(pk=pedido.pk).update(estado='entregado')
+        self.assertContains(self.client.get(url), 'data-en-curso="0"')
+
+    def test_fragmento_solo_disponible_para_el_dueno(self):
+        pedido = self.crear_pedido(cliente=self.beto)
+        url = reverse('pedido_estado', args=[pedido.pk])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.client.logout()
+        self.assertRedirects(self.client.get(url), f"{reverse('login')}?next={url}")
 
     def test_cancelado_no_muestra_indicador(self):
         r = self.ver(self.crear_pedido(estado='cancelado'))

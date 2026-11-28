@@ -4,6 +4,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import NoReverseMatch, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
 from .cart import Carrito, CarritoError
@@ -138,22 +139,30 @@ def confirmar_pedido(request):
     return render(request, 'pedidos/confirmar.html', contexto)
 
 
+@never_cache
 @rol_requerido('cliente')
-def pedido_creado(request, pk):
+def pedido_creado(request, pk, solo_estado=False):
     pedido = get_object_or_404(
         Pedido.objects.select_related('sede', 'direccion').prefetch_related('detalles__producto'),
         pk=pk, cliente=request.user,
     )
     nombres = dict(Pedido.ESTADOS)
-    indice = PASOS.index(pedido.estado) if pedido.estado in PASOS else -1
+    estados = PASOS
+    if pedido.tipo_entrega == 'domicilio':
+        estados = [*PASOS[:-1], 'en_camino', PASOS[-1]]
+    indice = estados.index(pedido.estado) if pedido.estado in estados else -1
     pasos = [
         {'nombre': nombres[clave], 'hecho': i < indice, 'actual': i == indice}
-        for i, clave in enumerate(PASOS)
+        for i, clave in enumerate(estados)
     ]
-    return render(request, 'pedidos/pedido_creado.html', {
+    plantilla = (
+        'pedidos/includes/seguimiento_pedido.html' if solo_estado
+        else 'pedidos/pedido_creado.html'
+    )
+    return render(request, plantilla, {
         'pedido': pedido,
         'pasos': pasos,
-        'refrescar': pedido.estado not in ESTADOS_FINALES,  # refresco automático mientras siga en curso
+        'refrescar': pedido.estado not in ESTADOS_FINALES,
     })
 
 
