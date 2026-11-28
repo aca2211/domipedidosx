@@ -14,6 +14,7 @@ Proyecto académico — Desarrollo de Software I (2026‑II), Universidad del Va
 7. [Manual del Administrador](#7-manual-del-administrador)
 8. [Preguntas frecuentes y mensajes del sistema](#8-preguntas-frecuentes-y-mensajes-del-sistema)
 9. [Glosario de estados de un pedido](#9-glosario-de-estados-de-un-pedido)
+10. [Manual del Repartidor](#10-manual-del-repartidor)
 
 ---
 
@@ -39,7 +40,7 @@ y **Administrador**.
 | **Cliente** | Se registra, navega el menú, arma su carrito, confirma pedidos, los sigue y puede cancelarlos. | No |
 | **Operador de Sede** | Atiende pedidos telefónicos o de mostrador en nombre de un cliente, y supervisa los pedidos del día de su sede. Tiene acceso limitado al panel de administración para gestionar el menú de su sede. | Sí |
 | **Cocina** | Ve el tablero de pedidos de su sede y los va avanzando de estado a medida que se preparan. | Sí |
-| **Repartidor** | Rol reservado para la entrega de domicilios. | No |
+| **Repartidor** | Consulta sus domicilios asignados y registra las entregas. | No |
 | **Administrador** | Acceso total al panel de administración: sedes, categorías, productos, usuarios y pedidos. | No |
 
 El rol de cada usuario lo asigna el **Administrador** desde el panel de administración
@@ -185,10 +186,8 @@ como cliente, te indica cuántas unidades llevas acumuladas.
 
 ### 5.1 Elegir la sede de trabajo
 
-Al entrar al **Panel del operador** o al tablero correspondiente, si aún no has
-elegido sede, el sistema te mostrará un selector con las sedes activas. Una vez
-elegida, el sistema la recuerda durante tu sesión (puedes cambiarla con la opción
-**Cambiar sede**).
+El **Panel del operador** usa la sede asignada a tu cuenta. Si tu sede no
+aparece al entrar, pide al administrador que revise la asignación.
 
 ### 5.2 Tomar un pedido en nombre de un cliente
 
@@ -213,13 +212,19 @@ puedes acceder rápidamente a los demás módulos (menú, tablero de cocina, etc
 El operador tiene acceso limitado al panel de administración (`/admin/`),
 restringido a su propia sede:
 
-- **Sedes y categorías**: solo puede verlas, no crearlas, editarlas ni borrarlas.
-- **Productos**: puede verlos y filtrarlos por categoría, pero no puede
-  crear, editar ni eliminar productos, ni ver el detalle de otras sedes.
-- **Disponibilidad por sede (Producto por sede)**: aquí sí puede **agregar y
-  editar**, marcando qué productos están disponibles o agotados en su propia
-  sede (casilla "disponible"). No puede eliminar registros ni ver los de otras
-  sedes.
+- **Sedes**. Consulta la sede asignada a tu cuenta.
+- **Categorías**. Puedes crear categorías y editar las que no tengan productos
+  en otras sedes.
+- **Productos**. Puedes crear productos para tu sede y editar los que se venden
+  únicamente allí. Pide al administrador que edite los productos compartidos.
+- **Productos por sede**. Ajusta el stock o la disponibilidad en tu sede.
+
+### 5.5 Asignar un domicilio
+
+1. Abre **Panel del operador** y localiza un domicilio en estado **Listo**.
+2. En la columna del repartidor, selecciona una cuenta y pulsa **Asignar**.
+3. Comprueba que aparezca el nombre del repartidor. El pedido pasa a **En camino**
+   y aparece en **Mis entregas** para la persona asignada.
 
 ---
 
@@ -305,9 +310,17 @@ En **Sedes** puedes crear y editar cada punto de atención:
 
 ### 7.4 Gestión de pedidos
 
-En **Pedidos** el administrador puede consultar todos los pedidos del sistema,
-filtrando por estado o por sede, y revisar el detalle de cada uno (líneas de
-producto, cantidades y precios congelados al momento de la compra).
+En **Pedidos** puedes consultar los pedidos del sistema y revisar sus líneas
+de producto, cantidades y precios registrados al momento de la compra.
+
+### 7.5 Buscar pedidos y clientes
+
+- Abre **Buscar pedidos** desde el inicio del administrador. Escribe el número
+  del pedido o un dato del cliente. Puedes combinar la búsqueda con filtros
+  de fecha, sede y estado.
+- Abre **Buscar clientes** para localizar una cuenta por nombre, usuario,
+  correo o teléfono. Usa el filtro de actividad para ver clientes activos
+  o inactivos.
 
 ---
 
@@ -331,9 +344,9 @@ elegida.
 Solo se pueden cancelar pedidos en estado **Recibido**. Una vez que la cocina
 empieza a prepararlo, ya no es posible cancelarlo desde la plataforma.
 
-**Inicié sesión como operador/cocina pero no veo nada.**
-Primero debes elegir la sede con la que vas a trabajar, usando el selector que
-aparece al entrar al panel o al tablero.
+**Inicié sesión como operador o cocina y no veo pedidos.**
+Pide al administrador que confirme tu sede asignada. Verifica también que
+haya pedidos para esa sede en el panel o tablero.
 
 ---
 
@@ -344,6 +357,7 @@ aparece al entrar al panel o al tablero.
 | **Recibido** | El pedido fue creado y aún no se empieza a preparar. Es el único estado desde el cual el cliente puede cancelarlo. |
 | **En preparación** | La cocina ya está preparando el pedido. |
 | **Listo** | El pedido está listo para ser entregado o recogido. |
+| **En camino** | El domicilio ya tiene repartidor asignado. |
 | **Entregado** | Estado final: el pedido fue entregado al cliente. |
 | **Cancelado** | Estado final: el pedido fue cancelado por el cliente mientras estaba en "Recibido". |
 
@@ -358,3 +372,15 @@ Controla la operación global de la marca.
 * **Configuración del Sistema:** Tiene acceso al panel de administración general. Puede crear nuevas sedes, configurar horarios de atención y establecer tiempos estimados por zonas de cobertura.
 * **Gestión de Usuarios:** Puede bloquear usuarios o asignar permisos a los empleados (convertir a un usuario normal en Operador o Cocinero).
 * **Reportes:** Visualiza métricas de ventas y ocupación de cocina para la toma de decisiones empresariales.
+
+---
+
+## 10. Manual del Repartidor
+
+1. Inicia sesión con tu cuenta de repartidor y abre **Mis entregas**.
+2. Localiza el pedido asignado y consulta el cliente y la dirección de entrega.
+3. Cuando hayas entregado el pedido, pulsa **Registrar entrega**.
+4. Comprueba que el pedido aparezca en **Entregados hoy**.
+
+Si no aparece un domicilio, confirma con el operador que el pedido esté
+**En camino** y asignado a tu cuenta.
