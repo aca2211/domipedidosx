@@ -43,12 +43,16 @@ class AuthTests(TestCase):
     def test_login_y_logout(self):
         CustomUser.objects.create_user('luis', 'l@test.com', 'ClaveSegura#2026')
         self.assertTrue(self.client.login(username='luis', password='ClaveSegura#2026'))
-        self.assertEqual(self.client.get(reverse('home')).status_code, 200)
-        self.client.post(reverse('logout'))
-        self.assertEqual(self.client.get(reverse('home')).status_code, 302)
+        respuesta = self.client.get(reverse('home'))
+        self.assertTemplateUsed(respuesta, 'home.html')
+        respuesta = self.client.post(reverse('logout'), follow=True)
+        self.assertTemplateUsed(respuesta, 'inicio_publico.html')
 
-    def test_home_requiere_login(self):
-        self.assertEqual(self.client.get(reverse('home')).status_code, 302)
+    def test_inicio_publico_muestra_el_menu_y_el_acceso(self):
+        respuesta = self.client.get(reverse('home'))
+        self.assertTemplateUsed(respuesta, 'inicio_publico.html')
+        self.assertContains(respuesta, 'Ver menú')
+        self.assertContains(respuesta, 'Iniciar sesión')
 
 
 class DireccionTests(TestCase):
@@ -536,7 +540,9 @@ class DesactivarUsuariosTests(TestCase):
         self.assertEqual(otro_navegador.get(reverse('home')).status_code, 200)
         self._accion('desactivar_usuarios', self.cliente)
         resp = otro_navegador.get(reverse('home'))
-        self.assertRedirects(resp, f"{reverse('login')}?next={reverse('home')}")
+        self.assertTemplateUsed(resp, 'inicio_publico.html')
+        resp = otro_navegador.get(reverse('perfil'))
+        self.assertRedirects(resp, f"{reverse('login')}?next={reverse('perfil')}")
 
     def test_usuario_desactivado_no_aparece_al_operador(self):
         sede = Sede.objects.create(name='Centro', address='Cra 1')

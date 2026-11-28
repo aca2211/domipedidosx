@@ -82,3 +82,45 @@
   </div>
 </section>
 {% endblock %}
+
+{% block footer %}
+<footer class="inicio-footer">
+  <div class="container">
+    <div class="inicio-footer-grid">
+      <div>
+        <a class="inicio-footer-marca" href="{% url 'home' %}">
+          <img src="{% static 'img/logo-icono.png' %}" alt="" height="32">
+          <span>DomiPedidosX</span>
+        </a>
+        <p>Universidad del Valle<br>Desarrollo de Software I</p>
+      </div>
+
+      <nav aria-label="Explorar el sitio">
+        <h2>Explorar</h2>
+        <ul>
+          <li><a href="{% url 'home' %}">Inicio</a></li>
+          <li><a href="{% url 'menu_list' %}">Menú</a></li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Accesos de cuenta">
+        <h2>Mi cuenta</h2>
+        <ul>
+          <li><a href="{% url 'login' %}">Iniciar sesión</a></li>
+          <li><a href="{% url 'register' %}">Registrarse</a></li>
+        </ul>
+      </nav>
+
+      <div class="inicio-footer-contacto">
+        <h2>Redes y contacto</h2>
+        <ul>
+          <li><i class="bi bi-instagram" aria-hidden="true"></i> Instagram</li>
+          <li><i class="bi bi-facebook" aria-hidden="true"></i> Facebook</li>
+          <li><i class="bi bi-envelope" aria-hidden="true"></i> Correo</li>
+        </ul>
+        <p class="inicio-footer-pendiente">Próximamente</p>
+      </div>
+    </div>
+  </div>
+</footer>
+{% endblock %}
