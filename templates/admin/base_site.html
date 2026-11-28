@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block extrastyle %}{{ block.super }}
+<link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
 <style>
   /* Paleta de marca DomiPedidosX para el panel de administración */
   html[data-theme="light"], :root {
@@ -99,6 +100,8 @@
     .domi-brand small { display: none; }
   }
 </style>
+<link rel="stylesheet" href="{% static 'css/admin-domipedidos.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin-editor.css' %}">
 {% endblock %}
 
 {% block branding %}
@@ -112,4 +115,26 @@
 {% if user.is_anonymous %}
   {% include "admin/color_theme_toggle.html" %}
 {% endif %}
+{% endblock %}
+
+{# Acciones de cuenta DomiPedidosX #}
+{% block userlinks %}
+    {% load i18n %}
+    <span class="domi-account-actions">
+        {% if site_url %}
+            <a href="{{ site_url }}">{% translate 'View site' %}</a>
+        {% endif %}
+        {% url 'django-admindocs-docroot' as docsroot %}
+        {% if docsroot %}
+            <a href="{{ docsroot }}">{% translate 'Documentation' %}</a>
+        {% endif %}
+        {% if user.has_usable_password %}
+            <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a>
+        {% endif %}
+        <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+            {% csrf_token %}
+            <button type="submit">Cerrar sesión</button>
+        </form>
+        {% include "admin/color_theme_toggle.html" %}
+    </span>
 {% endblock %}

@@ -33,7 +33,7 @@
     {% for p in products %}
       <div class="col-md-6 col-lg-4" data-product data-name="{{ p.name|lower }}" data-cat="{{ p.category.name|lower }}">
         <div class="card card-domi hover h-100">
-          {% if p.image %}<img src="{{ p.image.url }}" class="card-img-top" alt="{{ p.name }}" style="height: 180px; object-fit: cover;">{% endif %}
+          {% if p.display_image_url %}<img src="{{ p.display_image_url }}" class="card-img-top" alt="{{ p.name }}" style="height: 180px; object-fit: cover;">{% endif %}
           <div class="card-body">
             <span class="badge badge-domi mb-2">{{ p.category.name }}</span>
             <h5 class="card-title fw-bold">{{ p.name }}</h5>

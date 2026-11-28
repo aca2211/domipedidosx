@@ -1,0 +1,536 @@
+body.dashboard #content:has(.domi-overview) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 78rem;
+}
+
+#content .domi-model-card h3 a,
+#content .domi-card-actions a {
+    text-decoration: none;
+}
+
+#content .domi-card-actions a:hover {
+    text-decoration: underline;
+    text-underline-offset: .2em;
+}
+
+#content .domi-card-link {
+    border: 1px solid var(--hairline-color);
+    border-radius: 8px;
+    padding: .38rem .7rem;
+}
+
+/* Superficie compartida por los formularios de alta y edición. */
+#content .domi-editor {
+    background: var(--body-bg);
+    border: 1px solid var(--hairline-color);
+    border-radius: 16px;
+}
+
+#content .domi-editor fieldset.module {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    margin: 0;
+    padding: .5rem .5rem .8rem;
+}
+
+#content .domi-editor fieldset.module + fieldset.module {
+    border-top: 1px solid var(--hairline-color);
+}
+
+#content .domi-editor fieldset.module > :is(h2, legend),
+#content .domi-editor fieldset.module > details > summary {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: var(--body-fg);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    padding: .85rem 1rem .35rem;
+}
+
+#content .domi-editor .form-row {
+    padding: .65rem 1rem;
+}
+
+#content .domi-editor .form-row label {
+    font-size: .9rem;
+}
+
+#content .domi-editor input:is([type="text"], [type="number"], [type="url"],
+    [type="email"], [type="password"]),
+#content .domi-editor select,
+#content .domi-editor textarea {
+    background: var(--darkened-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--body-fg);
+}
+
+#content .domi-editor input::file-selector-button {
+    background: var(--selected-row);
+    border: 1px solid var(--hairline-color);
+    border-radius: 8px;
+    color: var(--body-fg);
+    cursor: pointer;
+    margin-inline-end: .65rem;
+    padding: .45rem .65rem;
+}
+
+body.change-form #content .submit-row {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding: 0;
+}
+
+body.change-form #content .submit-row input[type="submit"] {
+    margin: 0;
+    text-transform: none;
+}
+
+body.change-form #content .submit-row input[type="submit"]:not(.default) {
+    background: var(--body-bg);
+    border: 1px solid var(--hairline-color);
+    color: var(--body-fg);
+}
+
+body.change-form #content .submit-row input[type="submit"]:not(.default):hover {
+    background: var(--selected-row);
+}
+
+body.change-form #content .submit-row input.default {
+    background: #A14646;
+    order: 1;
+}
+
+body.change-form #content .submit-row .deletelink-box {
+    margin-inline-end: auto;
+}
+
+@media (max-width: 767px) {
+    #content .domi-editor .form-row {
+        padding-inline: .65rem;
+    }
+
+    body.change-form #content .submit-row {
+        justify-content: flex-start;
+    }
+}
+
+/* Tarjetas de las portadas del administrador */
+#content:has(.domi-overview) > h1 {
+    text-align: center;
+}
+
+#content .domi-overview {
+    max-width: 64rem;
+    margin-inline: auto;
+}
+
+#content .domi-section-title {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+#content .domi-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+#content .domi-model-card {
+    box-sizing: border-box;
+    align-items: center;
+    min-height: 8rem;
+    padding: 1.1rem .75rem;
+    text-align: center;
+}
+
+#content .domi-card-actions {
+    justify-content: center;
+    gap: .5rem;
+}
+
+#content .domi-card-actions a:is(:link, :visited, :hover, :focus-visible, :active) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .3rem;
+    box-sizing: border-box;
+    min-height: 2.25rem;
+    padding: .35rem .65rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+#content .domi-card-actions a.domi-card-link {
+    color: var(--link-fg);
+    background: var(--body-bg);
+    border-color: #DA6556;
+}
+
+#content .domi-card-actions a.domi-card-link:hover {
+    background: var(--selected-row);
+}
+
+#content .domi-card-actions a.domi-card-add {
+    background: #A14646;
+    color: #fff;
+}
+
+#content .domi-card-actions a.domi-card-add:hover {
+    background: #803737;
+}
+
+#content .domi-card-actions a:focus-visible {
+    outline: 2px solid #EB895B;
+    outline-offset: 3px;
+}
+
+@media (max-width: 960px) {
+    #content .domi-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 540px) {
+    #content .domi-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Centrar las portadas de sección en escritorio */
+@media (min-width: 961px) {
+    body #content.colM:has(#content-main.domi-overview) {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: none;
+        margin-inline: 0;
+        float: none;
+    }
+
+    #content.colM:has(#content-main.domi-overview) h1 {
+        text-align: center;
+    }
+
+    #content #content-main.domi-overview {
+        float: none;
+        width: 100%;
+        max-width: 64rem;
+        margin-inline: auto;
+    }
+}
+
+/* Centrar las portadas de sección en pantallas grandes */
+@media (min-width: 961px) {
+    #main > .content:has(#content-main.domi-overview):not(:has(#content-related)) {
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+    }
+
+    #main #content:has(#content-main.domi-overview):not(:has(#content-related)) {
+        box-sizing: border-box;
+        float: none;
+        width: 100%;
+        max-width: none;
+        margin-inline: 0;
+    }
+
+    #main #content:has(#content-main.domi-overview):not(:has(#content-related)) h1 {
+        text-align: center;
+    }
+
+    #main #content-main.domi-overview {
+        box-sizing: border-box;
+        float: none;
+        width: min(100%, 64rem);
+        margin-inline: auto;
+    }
+}\n\n/* Navegación del administrador DomiPedidosX */
+#header {
+    background: var(--domi-header-bg);
+    border: 0;
+    box-shadow: inset 0 -2px #A14646;
+    box-sizing: border-box;
+    gap: .75rem 1.5rem;
+    padding: .85rem clamp(1rem, 3vw, 2.25rem);
+}
+
+#header #user-tools {
+    font-size: .8rem;
+    letter-spacing: normal;
+    line-height: 1.4;
+    text-transform: none;
+}
+
+#header #user-tools a,
+#header #logout-form button,
+#header #user-tools .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    margin-block: .15rem;
+    padding-inline: .55rem;
+    border: 1px solid var(--hairline-color);
+    border-radius: 7px;
+    box-sizing: border-box;
+    font: inherit;
+    color: var(--domi-header-link);
+    text-decoration: none;
+}
+
+#header #user-tools a:hover,
+#header #logout-form button:hover,
+#header #user-tools .theme-toggle:hover {
+    background: var(--selected-row);
+}
+
+#header #user-tools :is(a, button):focus-visible {
+    outline: 2px solid #EB895B;
+    outline-offset: 2px;
+}
+
+#container div.breadcrumbs {
+    background: var(--body-bg);
+    border-bottom: 1px solid var(--hairline-color);
+    color: var(--body-quiet-color);
+    padding: .65rem clamp(1rem, 3vw, 2.25rem);
+}
+
+#container div.breadcrumbs a {
+    color: var(--link-fg);
+    text-decoration: none;
+}
+
+#container div.breadcrumbs a:hover {
+    text-decoration: underline;
+    text-underline-offset: .2em;
+}
+
+#nav-sidebar #nav-filter {
+    border-radius: 9px;
+    min-height: 2.4rem;
+}
+
+#nav-sidebar .module caption {
+    border-bottom: 1px solid var(--hairline-color);
+    padding-bottom: .55rem;
+}
+
+#nav-sidebar .module caption a.section:is(:link, :visited) {
+    color: var(--body-fg);
+    text-decoration: none;
+}
+
+#nav-sidebar .module tr > :is(th, td) {
+    background: transparent;
+}
+
+#nav-sidebar .module tr > th {
+    border-inline-start: 3px solid transparent;
+}
+
+#nav-sidebar .module tr:hover > :is(th, td),
+#nav-sidebar .module tr.current-model > :is(th, td) {
+    background: color-mix(in srgb, #FDB773 20%, var(--body-bg));
+}
+
+#nav-sidebar .module tr.current-model > th {
+    border-inline-start-color: #DA6556;
+    border-radius: 8px 0 0 8px;
+}
+
+#nav-sidebar .module tr.current-model > td:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+#nav-sidebar .module th a {
+    text-decoration: none;
+}
+
+#nav-sidebar .module a.addlink {
+    display: inline-flex;
+    align-items: center;
+    background: var(--body-bg);
+    border: 1px solid var(--hairline-color);
+    border-radius: 6px;
+    color: var(--link-fg);
+    padding: .2rem .4rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+#nav-sidebar .module a.addlink:hover {
+    background: var(--selected-row);
+    border-color: #EB895B;
+}
+
+@media (max-width: 767px) {
+    #header {
+        gap: .4rem;
+    }
+
+    #header #user-tools {
+        white-space: normal;
+    }
+}
+
+/* Acciones de cuenta DomiPedidosX */
+#header #user-tools .domi-account-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem;
+    margin-inline-start: .4rem;
+    vertical-align: middle;
+}
+
+#header #user-tools .domi-account-actions > a {
+    background: #FDB773;
+    border-color: transparent;
+    color: #482323;
+    font-weight: 600;
+}
+
+#header #user-tools .domi-account-actions > a:hover {
+    background: #EB895B;
+}
+
+#header #user-tools .domi-account-actions #logout-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+#header #user-tools .domi-account-actions #logout-form button {
+    background: #A14646;
+    border-color: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: none;
+}
+
+#header #user-tools .domi-account-actions #logout-form button:hover {
+    box-shadow: inset 0 0 0 2px #DA6556;
+}
+
+@media (max-width: 767px) {
+    #header #user-tools .domi-account-actions {
+        justify-content: center;
+        margin-inline-start: 0;
+    }
+}
+
+/* Catálogo y vista previa DomiPedidosX */
+#content .domi-product-name {
+    display: inline-flex;
+    align-items: center;
+    gap: .7rem;
+}
+
+#content .domi-product-thumb {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 3rem;
+    width: 3rem;
+    height: 3rem;
+    object-fit: cover;
+    border: 1px solid var(--hairline-color);
+    border-radius: 8px;
+    box-sizing: border-box;
+    background: var(--darkened-bg);
+}
+
+#content .domi-product-thumb-empty {
+    color: var(--body-quiet-color);
+    font-size: .625rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+#content .domi-category-tag {
+    display: inline-block;
+    padding: .25rem .55rem;
+    border-radius: 6px;
+    background: color-mix(in srgb, #FDB773 25%, var(--body-bg));
+    color: var(--body-fg);
+    font-size: .78rem;
+}
+
+#content #changelist .field-precio_cop {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+#content .domi-image-panel {
+    box-sizing: border-box;
+    display: grid;
+    align-content: start;
+    justify-items: center;
+    gap: .6rem;
+    min-width: 0;
+    margin: .65rem 1rem;
+    padding: 1rem;
+    background: var(--darkened-bg);
+    border: 1px solid var(--hairline-color);
+    border-radius: 12px;
+    color: var(--body-fg);
+    text-align: center;
+}
+
+#content .domi-image-panel p {
+    margin: 0;
+    padding: 0;
+    color: var(--body-quiet-color);
+}
+
+#content .domi-image-panel [role="status"]:empty {
+    display: none;
+}
+
+#content .domi-image-panel .product-image-preview {
+    max-width: 100%;
+    max-height: 12rem;
+    margin: 0;
+}
+
+@media (min-width: 1050px) {
+    #content #product_form fieldset:has(> .domi-image-panel--side) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(11rem, 32%);
+        align-items: start;
+    }
+
+    #content #product_form fieldset:has(> .domi-image-panel--side)
+        > :is(h2, legend, .description) {
+        grid-column: 1 / -1;
+    }
+
+    #content #product_form fieldset:has(> .domi-image-panel--side) > .form-row {
+        grid-column: 1;
+    }
+
+    #content #product_form fieldset > .domi-image-panel--side {
+        grid-column: 2;
+        grid-row: span 2;
+        grid-row-end: -1;
+    }
+}
+
+body.change-list:has(.domi-list-header .domi-list-add)
+    #nav-sidebar tr.current-model a.addlink {
+    display: none;
+}

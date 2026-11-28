@@ -10,6 +10,9 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+import json
+from pathlib import Path
+
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
@@ -73,6 +76,7 @@ USUARIOS = [
     ('demo_cliente', 'cliente', 'Ana', 'Cliente'),
     ('demo_operador', 'operador', 'Oscar', 'Operador'),
     ('demo_cocina', 'cocina', 'Carla', 'Cocina'),
+    ('demo_repartidor', 'repartidor', 'Rafael', 'Repartidor'),
     ('demo_admin', 'admin', 'Adriana', 'Admin'),
 ]
 
@@ -122,6 +126,13 @@ class Command(BaseCommand):
         with transaction.atomic():
             sedes = self._sedes()
             productos = self._menu(sedes)
+            # Completar las fotos del catálogo demo.
+            archivo_fotos = Path(__file__).with_name('fotos_demo.json')
+            fotos = json.loads(archivo_fotos.read_text(encoding='utf-8'))
+            for nombre, enlace in fotos.items():
+                Product.objects.filter(name=nombre, image='', image_url='').update(
+                    image_url=enlace,
+                )
             if options['ocultar_otros']:
                 self._ocultar_otros(productos)
             usuarios = self._usuarios()

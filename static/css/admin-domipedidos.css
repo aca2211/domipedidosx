@@ -1,0 +1,393 @@
+/* DomiPedidosX · Administrador */
+:root {
+    --domi-space: clamp(1rem, 2.6vw, 2rem);
+    --domi-radius: 12px;
+    --domi-border: var(--hairline-color);
+    --domi-panel: var(--body-bg);
+}
+
+body {
+    background: var(--darkened-bg);
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+#header {
+    border-bottom: 1px solid var(--domi-border);
+    padding-block: .8rem;
+}
+
+div.breadcrumbs {
+    background: var(--darkened-bg);
+    border-bottom: 0;
+    color: var(--body-quiet-color);
+    padding: .8rem var(--domi-space);
+}
+
+div.breadcrumbs a {
+    color: var(--link-fg);
+    text-decoration: underline;
+    text-underline-offset: .2em;
+}
+
+#main > .content,
+#content {
+    min-width: 0;
+}
+
+#content {
+    padding: var(--domi-space);
+}
+
+#content h1 {
+    color: var(--body-fg);
+    font-size: clamp(1.45rem, 2.6vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -.035em;
+    line-height: 1.2;
+    margin: 0 0 1.2rem;
+}
+
+/* Navegación */
+#nav-sidebar {
+    background: var(--domi-panel);
+    border-inline-end: 1px solid var(--domi-border);
+}
+
+#nav-sidebar #nav-filter {
+    background: var(--darkened-bg);
+    border: 1px solid var(--domi-border);
+    border-radius: 8px;
+    box-sizing: border-box;
+    margin: .85rem;
+    padding: .55rem .7rem;
+    width: calc(100% - 1.7rem);
+}
+
+#nav-sidebar .module {
+    background: transparent;
+    border: 0;
+    margin: 0 .65rem .85rem;
+}
+
+#nav-sidebar .module caption {
+    background: transparent;
+    color: var(--body-quiet-color);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    padding: .7rem .55rem .4rem;
+    text-transform: uppercase;
+}
+
+#nav-sidebar .module caption a {
+    color: inherit;
+}
+
+#nav-sidebar .module th,
+#nav-sidebar .module td {
+    background: transparent;
+    border-bottom: 0;
+    padding: .6rem .55rem;
+}
+
+#nav-sidebar .module th a {
+    color: var(--body-fg);
+}
+
+#nav-sidebar .module tr:hover > *,
+#nav-sidebar .module tr.current-model > * {
+    background: var(--selected-row);
+}
+
+#nav-sidebar .module tr.current-model th {
+    border-inline-start: 3px solid #DA6556;
+    border-radius: 6px 0 0 6px;
+}
+
+#nav-sidebar .module tr.current-model th a {
+    color: var(--link-fg);
+    font-weight: 700;
+}
+
+/* Listados, filtros y formularios */
+#content .module,
+#content #changelist,
+#content #changelist-filter,
+#content .submit-row {
+    background: var(--domi-panel);
+    border: 1px solid var(--domi-border);
+    border-radius: var(--domi-radius);
+    box-sizing: border-box;
+}
+
+#content .module {
+    margin-bottom: 1rem;
+}
+
+#content .module caption,
+#content .module h2,
+#content #changelist-filter h2 {
+    background: transparent;
+    color: var(--body-fg);
+    font-size: .95rem;
+    font-weight: 700;
+    padding: .85rem 1rem .6rem;
+}
+
+#content .module caption a {
+    color: var(--link-fg);
+}
+
+#content .module .description {
+    color: var(--body-quiet-color);
+    margin: 0;
+    padding: 0 1rem .3rem;
+}
+
+#content #toolbar,
+#content #changelist .actions {
+    background: transparent;
+    border-color: var(--domi-border);
+}
+
+#content #changelist .results,
+#content .inline-group .tabular {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+#content table thead th {
+    background: var(--darkened-bg);
+    color: var(--body-fg);
+}
+
+#content table tbody tr {
+    background: var(--domi-panel);
+}
+
+#content table tbody tr:hover > *,
+#content table tbody tr.selected > * {
+    background: var(--selected-row);
+}
+
+#content fieldset .form-row {
+    border-bottom: 0;
+    min-width: 0;
+    padding: .55rem 1rem .8rem;
+}
+
+#content fieldset .form-row label {
+    color: var(--body-fg);
+    font-weight: 600;
+}
+
+#content :is(input[type="text"], input[type="number"], input[type="url"],
+              input[type="email"], input[type="search"], select, textarea) {
+    border-radius: 8px;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+#content textarea {
+    min-height: 5rem;
+}
+
+#content input[type="file"] {
+    max-width: 100%;
+}
+
+#content .object-tools a,
+#content .submit-row :is(input[type="submit"], a) {
+    border-radius: 8px;
+}
+
+#content .object-tools a,
+#content .submit-row input.default {
+    background-color: #A14646;
+    color: #fff;
+}
+
+#content .object-tools a:hover,
+#content .submit-row input.default:hover {
+    background-color: #803737;
+}
+
+#content .submit-row {
+    border-inline-start: 3px solid #FDB773;
+}
+
+:where(#header, #content, #nav-sidebar, .breadcrumbs) :focus-visible {
+    outline: 2px solid #EB895B;
+    outline-offset: 2px;
+}
+
+/* Datos del producto: campos relacionados en la misma fila */
+body.model-product #product_form fieldset .form-row :is(input.vTextField, textarea) {
+    width: 100%;
+}
+
+body.model-product #product_form .field-description textarea {
+    height: 6rem;
+}
+
+@media (min-width: 900px) {
+    body.model-product #product_form fieldset:has(> .field-prep_time_minutes) {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.model-product #product_form fieldset:has(> .field-prep_time_minutes)
+        > :is(h2, .description, .field-description) {
+        grid-column: 1 / -1;
+    }
+
+    body.model-product #product_form fieldset:has(> .field-prep_time_minutes)
+        .flex-container {
+        display: flex;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    body.model-product #product_form fieldset:has(> .field-prep_time_minutes)
+        .flex-container > label {
+        box-sizing: border-box;
+        flex: 0 0 100%;
+        width: auto;
+    }
+
+    body.model-product #product_form .related-widget-wrapper {
+        min-width: 0;
+    }
+}
+
+.product-image-preview {
+    display: block;
+    max-width: min(100%, 240px);
+    max-height: 160px;
+    border: 1px solid var(--domi-border);
+    border-radius: 8px;
+    margin-top: .75rem;
+    object-fit: contain;
+}
+
+.product-image-preview[hidden] {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    #content .object-tools {
+        margin-bottom: 1rem;
+    }
+
+    #content .submit-row {
+        white-space: normal;
+    }
+}
+
+/* Portadas del administrador */
+#content-main.domi-overview {
+    float: none;
+    min-width: 0;
+    width: 100%;
+}
+
+#content.colM:has(.domi-overview) {
+    max-width: 78rem;
+    width: auto;
+    margin-inline: auto;
+}
+
+#content.colMS:has(.domi-overview) {
+    width: auto;
+}
+
+#content .domi-section + .domi-section {
+    margin-top: 2rem;
+}
+
+#content .domi-section-title {
+    color: var(--body-fg);
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 .8rem;
+}
+
+#content .domi-section-title a {
+    color: inherit;
+}
+
+.domi-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: .85rem;
+}
+
+.domi-model-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+    min-height: 6rem;
+    padding: 1rem;
+    background: var(--body-bg);
+    border: 1px solid var(--hairline-color);
+    border-radius: 14px;
+}
+
+.domi-model-card:focus-within,
+.domi-model-card:hover {
+    border-color: #DA6556;
+    box-shadow: 0 4px 14px rgb(80 32 32 / 8%);
+}
+
+.domi-model-card h3 {
+    color: var(--body-fg);
+    font-size: 1rem;
+    margin: 0;
+}
+
+.domi-model-card h3 a {
+    color: inherit;
+}
+
+.domi-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem .85rem;
+}
+
+#content .domi-card-link {
+    color: var(--link-fg);
+    font-weight: 600;
+    padding-block: .4rem;
+}
+
+#content .domi-card-add {
+    background: #A14646;
+    color: #fff;
+    border-radius: 7px;
+    font-weight: 600;
+    padding: .4rem .65rem;
+}
+
+#content .domi-card-add:hover {
+    background: #803737;
+}
+
+/* La sección activa usa el color de texto del tema. */
+#nav-sidebar .module caption a.section:link,
+#nav-sidebar .module caption a.section:visited {
+    color: var(--body-fg);
+}
+
+#nav-sidebar .module caption a.section:hover {
+    text-decoration: underline;
+    text-underline-offset: .2em;
+}
+
+#content #changelist table tbody td,
+#content #changelist table tbody th {
+    padding-block: .75rem;
+}

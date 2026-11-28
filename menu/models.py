@@ -1,3 +1,4 @@
+from django.core.validators import URLValidator
 import re
 import unicodedata
 from datetime import time
@@ -37,24 +38,43 @@ class Sede(models.Model):
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
+    name = models.CharField('nombre', max_length=100)
+    description = models.TextField('descripción', blank=True)
+
+    class Meta:
+        verbose_name = 'categoría'
+        verbose_name_plural = 'categorías'
 
     def __str__(self):
         return self.name
 
 
 class Product(models.Model):
-    category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
+    category = models.ForeignKey(
+        Category, verbose_name='categoría', related_name='products', on_delete=models.CASCADE,
+    )
     sedes = models.ManyToManyField(Sede, through='SedeProduct', related_name='products')
-    name = models.CharField(max_length=200)
-    description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField('imagen', upload_to='products/', blank=True)
+    name = models.CharField('nombre', max_length=200)
+    description = models.TextField('descripción')
+    price = models.DecimalField('precio', max_digits=10, decimal_places=2)
+    image = models.ImageField('subir imagen', upload_to='products/', blank=True)
+    image_url = models.URLField(
+        'enlace de la imagen', max_length=2048, blank=True,
+        help_text='Pega el enlace directo a una imagen. Puedes dejar ambos campos vacíos.',
+        validators=[URLValidator(schemes=['https', 'http'])],
+    )
     prep_time_minutes = models.PositiveSmallIntegerField(
         'tiempo de preparación (min)', default=15,
         validators=[MinValueValidator(1), MaxValueValidator(240)],
     )
+
+    class Meta:
+        verbose_name = 'producto'
+        verbose_name_plural = 'productos'
+
+    @property
+    def display_image_url(self):
+        return self.image.url if self.image else self.image_url
 
     def __str__(self):
         return self.name
