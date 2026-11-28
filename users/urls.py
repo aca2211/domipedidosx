@@ -5,6 +5,7 @@ from .forms import LoginForm, NuevaContrasenaForm, RecuperarContrasenaForm
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('ayuda/', views.manual_usuario, name='manual_usuario'),
     path('registro/', views.register, name='register'),
     path('login/', auth_views.LoginView.as_view(authentication_form=LoginForm), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

@@ -163,3 +163,20 @@ def direccion_principal(request, pk):
     direccion.save()
     messages.success(request, f'«{direccion.label}» es ahora tu dirección principal.')
     return redirect('direccion_lista')
+
+
+def manual_usuario(request):
+    from django.conf import settings
+    from django.utils.safestring import mark_safe
+    from markdown import markdown
+    from markdown.extensions.toc import TocExtension, slugify_unicode
+
+    archivo = settings.BASE_DIR / 'docs' / 'manual_de_usuario.md'
+    contenido = archivo.read_text(encoding='utf-8')
+
+    # El Markdown viene de un archivo versionado del proyecto.
+    html = markdown(
+        contenido,
+        extensions=['tables', TocExtension(slugify=slugify_unicode)],
+    )
+    return render(request, 'manual_usuario.html', {'manual_html': mark_safe(html)})
